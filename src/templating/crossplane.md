@@ -1,300 +1,173 @@
 # Crossplane
 
-# 100Days Resources
-* [Video by Anais Urlichs](https://youtu.be/Dw0SMLHZvXM)
-* Add your blog posts, videos etc. related to the topic here!
+## Links
 
-# Learning Resources
-- The Website [https://crossplane.io/](https://crossplane.io/)
-- The Docs [https://crossplane.io/docs/v1.0/](https://crossplane.io/docs/v1.0/)
+* [Video By Shahrooz Aghili](https://www.youtube.com/watch?v)
+* [Crossplane](https://crossplane.io/)
+* [Docs](https://docs.crossplane.io/)
 
-# Example Notes
+Highlights and Intro:
+> **Crossplane** is an advanced tool for managing infrastructure in the cloud-native ecosystem. 
 
-Some Highlights from their website:
+It distinguishes itself from traditional Configuration Management and Infrastructure as Code (IaC) tools. Platforms like Chef, Puppet, and Ansible have become less prevalent, while Terraform and Pulumi, despite their popularity, lack efficient drift detection. This means if a resource is modified outside Terraform, it won't detect the change. Crossplane, on the other hand, excels in detecting drifts and integrates seamlessly with GitOps workflows, allowing infrastructure management directly through kubectl.
 
-> Crossplane is an open source Kubernetes add-on that supercharges your Kubernetes clusters enabling you to provision and manage infrastructure, services, and applications from kubectl.
+**Benefits**:
 
-Crossplane is a CNCF sandbox project which extends the Kubernetes API to manage and compose infrastructure.
+* Manages infrastructure in a cloud-native way using kubectl.
+* Supports major cloud providers and is continually updated with new ones.
+* Allows building custom infrastructure abstractions.
+* Based on Custom Resource Definitions (CRD), making it extensible and runnable anywhere.
+* Acts as a single source of truth for infrastructure management.
+* Enables management of policies through custom APIs, simplifying infrastructure complexity.
+* Offers Declarative Infrastructure Configuration: self-healing and accessible via kubectl and YAML.
+* Integrates with leading GitOps tools like Flux & ArgoCD.
 
-Crossplane introduces multiple building blocks that enable you to provision, compose, and consume infrastructure using the Kubernetes API. These individual concepts work together to allow for powerful separation of concern between different personas in an organization, meaning that each member of a team interacts with Crossplane at an appropriate level of abstraction.
+## Install Crossplane using Helm
 
-Crossplane uses Kubernetes Custom Resource Definitions to manage your infrastructure and resources. Basically, all of the resources used are Kubernetes resources themselves, making it possible for Crossplane to interact with any other Kubernetes Resources.
-
-In short, Crossplane manages all of your resources through a Kubernetes API.
-
-The Benefits:
-
-1. Manage your infrastructure directly through kubectl
-2. Supports infrastructure from all major cloud providers + the maintainers are consistently working on new providers
-3. You can build your own infrastructure abstraction on top of Crossplane
-4. Crossplane is based on CRD, so you can run it anywhere + it is extensible
-5. One place of truth for your infrastructure
-6. Use custom APIs to manage policies, hiding infrastructure complexity and safely customise application
-7. Declarative Infrastructure Configuration —  infrastructure managed through Crossplane is accessible via kubectl, configurable with YAML, and self-healing right out of the box.
-
-**GitOps best practices**
-
-Crossplane can be combined with CI/CD pipelines, this allows to implement GitOps best practices. GitOps is a deployment strategy, whereby everything, the desired state of the application is defined in git.
-
-> infrastructure configuration that can be versioned, managed, and deployed using your favorite tools and existing processes
-
-To use crossplane you initially need any type of Kubernetes Cluster — it could be Minikube, where you then install it! Once you have access to the Crossplane Kubernetes resources 
-
-> On their own, custom resources let you store and retrieve structured data. When you combine a custom resource with a custom controller, custom resources provide a true declarative API.
-
-## Install Crossplane
-
-Crossplane combines custom resource definitions and custom controllers — those are both Kubernetes resources. So you install Kubernetes resources that are used to manage Crossplane.
-
-[https://docs.crossplane.io/v1.10/getting-started/install-configure/](https://docs.crossplane.io/v1.10/getting-started/install-configure/)
-
-Prerequisites
-
-1. Have kubectl installed
-2. Have Helm installed
-3. Have a local Kubernetes cluster, or any Kubernetes cluster
-4. Have access to the account e.g. Azure or Google where you want to provision your infrastructure
-
-First, you need to install Corssplane on a Kubernetes cluster. Note that this can be any cluster, it does not have to be the cluster that you will be using Crossplane on to provision Infrastructure. This just provides the Corssplane interface for you to be able to use Corssplane. For instance, in my case, I am going to be using Crossplane on my Docker Cluster and then povision Infrastructure on Azure.
-
-Note that we are going the self-provisioned route:
+Crossplane is an extension to the k8s api, therefore we need a cluster (any cluster would do) to install it. This cluster is some time refered to as operations cluster. In this tutorial we are going to use minikube.
 
 ```jsx
-kubectl create namespace crossplane-system
+minikube start
+```
 
-helm repo add crossplane-stable https://charts.crossplane.io/stable
+Once minikube is up and running, we can install cross-plane by running a **helm** command.
+
+```jsx
+helm repo add \
+crossplane-stable https://charts.crossplane.io/stable
+
 helm repo update
 
-helm install crossplane --namespace crossplane-system crossplane-stable/crossplane
+helm install crossplane \
+crossplane-stable/crossplane \
+--namespace crossplane-system \
+--create-namespace
 ```
 
-Check that all resources are running properly
+Now, Let's see if crossplane is running without any issues.
 
 ```jsx
-helm list -n crossplane-system
-
-kubectl get all -n crossplane-system
+kubectl get pods -n crossplane-system
 ```
 
-Next, we can install the Crossplane CLI that will be used in combination with kubectl: 
+Crossplane is extending the kubernetes api. let's checkout the new custom resource definitions and api.
 
 ```jsx
-curl -sL https://raw.githubusercontent.com/crossplane/crossplane/release-1.0/install.sh | sh
+kubectl api-resources  | grep crossplane
+kubectl get crds | grep crossplane
 ```
 
-Depending on the provider that you want to use, you can select Azure, GCP, AWS, or Alibaba (as of the time of writing)
+## Setting up the Hyperscaler (GCP)
 
-On the same cluster that you installed the previous resources on:
+Next, we need to enable crossplane access to our Hyperscaler of choice. All we need is a secret in the `crossplane-system` namespace.
+The secret should contain a service account key.json.
+Please note that the service account should be granted proper permissions for resoruce adminstration.
 
 ```jsx
-kubectl crossplane install provider crossplane/provider-azure:v0.14.0
+export PROJECT_ID="YOUR-PROJECT-ID"
+export SA_NAME="YOUR-SA-NAME"
+
+export SA="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+
+gcloud iam service-accounts \
+    create $SA_NAME \
+    --project $PROJECT_ID
+
+export ROLE=roles/admin
+
+gcloud projects add-iam-policy-binding \
+    --role $ROLE $PROJECT_ID \
+    --member serviceAccount:$SA
+
+gcloud iam service-accounts keys \
+    create creds.json \
+    --project $PROJECT_ID \
+    --iam-account $SA
+
+kubectl create secret \
+generic gcp-secret \
+-n crossplane-system \
+--from-file=creds=./creds.json
 ```
 
-Now wait until the Provider becomes healthy:
+## Setting up the GCP storage provider
+
+Next, we install and configure a crossplane provider that specializes in managing storage related services in GCP.
 
 ```jsx
-kubectl get provider.pkg --watch
+cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-gcp-storage
+spec:
+  package: xpkg.upbound.io/upbound/provider-gcp-storage:v0.35.0
+EOF
 ```
 
-Now it will get a bit tricks. If you are using Azure, make sure that you are logged into your account.  For that, first install the Azure CLI :
+Let's give it some time until our provider becomes healthy.
 
 ```jsx
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+kubectl get providers --watch
 ```
 
-And then login with:
+Next, we need to configure the provider and make it aware of the GCP secret which we created in the previous step   .
 
 ```jsx
-az login
-```
-
-Once you are logged in, you can run the following commands
-
-```jsx
-**# create service principal with Owner role
-az ad sp create-for-rbac --sdk-auth --role Owner > "creds.json"
-
-# we need to get the clientId from the json file to add Azure Active Directory
-# permissions.
-if which jq > /dev/null 2>&1; then
-  AZURE_CLIENT_ID=$(jq -r ".clientId" < "./creds.json")
-else
-  AZURE_CLIENT_ID=$(cat creds.json | grep clientId | cut -c 16-51)
-fi
-
-RW_ALL_APPS=1cda74f2-2616-4834-b122-5cb1b07f8a59
-RW_DIR_DATA=78c8a3c8-a07e-4b9e-af1b-b5ccab50a175
-AAD_GRAPH_API=00000002-0000-0000-c000-000000000000
-
-az ad app permission add --id "${AZURE_CLIENT_ID}" --api ${AAD_GRAPH_API} --api-permissions ${RW_ALL_APPS}=Role ${RW_DIR_DATA}=Role
-az ad app permission grant --id "${AZURE_CLIENT_ID}" --api ${AAD_GRAPH_API} --expires never > /dev/null
-az ad app permission admin-consent --id "${AZURE_CLIENT_ID}"**
-```
-
-Note that some of them might not work if you are not at least an owner within your Azure account.
-
-Lastly we need to set-up a Provider Secret and our Provider
-
-```jsx
-**kubectl create secret generic azure-creds -n crossplane-system --from-file=key=./creds.json**
-```
-
-Now **either** create the following file ProviderConfig.yaml
-
-```jsx
-apiVersion: azure.crossplane.io/v1beta1
+cat <<EOF | kubectl apply -f -
+apiVersion: gcp.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: default
 spec:
+  projectID: $PROJECT_ID
   credentials:
     source: Secret
     secretRef:
       namespace: crossplane-system
-      name: azure-creds
-      key: key
+      name: gcp-secret
+      key: creds
+EOF
 ```
 
-And then run 
+## Creating a Managed Storage Bucket
+
+The provider is ready to listen to our api requests, Let's create a bucket
 
 ```jsx
-kubectl apply --file ./ProviderConfig.yaml
-```
 
-Note that you might have to modify the file path depending on where the file is stored at.
-
-Alternatively, you can run the following command
-
-```jsx
-kubectl apply -f https://raw.githubusercontent.com/crossplane/crossplane/release-1.0/docs/snippets/configure/azure/providerconfig.yaml
-```
-
-## Provision Infrastructure
-
-This step is pretty straight forward — we can set-up a Kubernetes Yaml file that allows us to create a Kubernetes Service i.e. a Cluster on Azure:
-
-E.g. we will name is aks in our case
-
-```jsx
-apiVersion: azure.crossplane.io/v1alpha3
-kind: ResourceGroup
+BUCKET_NAME=my-crossplane-bucket
+cat <<EOF | kubectl create -f -
+apiVersion: storage.gcp.upbound.io/v1beta1
+kind: Bucket
 metadata:
-  name: CHANGE_ME_RESOURCE_GROUP
+  name: $BUCKET_NAME
+  labels:
+    docs.crossplane.io/example: provider-gcp
 spec:
-  location: eastus
-
----
-
-apiVersion: compute.azure.crossplane.io/v1alpha3
-kind: AKSCluster
-metadata:
-  name: anais-demo
-spec:
-  location: eastus
-  version: "1.19.7"
-  nodeVMSize: Standard_D2_v2
-  resourceGroupNameRef:
-    name: CHANGE_ME_RESOURCE_GROUP
-  dnsNamePrefix: dt
-  nodeCount: 3
+  forProvider:
+    location: US
+  providerConfigRef:
+    name: default
+EOF
 ```
 
-Have a look at the Azure documentation on how the YAML has to be defined to create different services.
+## Drift Detection
 
-Once we apply the YAML
+If our managed resouces get modified or deleted outside the scope of crossplane, crossplane provider can react to the drift and reconsile the infrastructure to the desired config.
+Let's try deleting the bucket from the GCP console. Once done, we can watch the managed bucket again:
 
 ```jsx
-kubectl apply --filename ./aks.yaml
+watch kubectl get buckets
 ```
 
-We can go ahead and have a look at the created resources
+It takes a few minutes unitl the bucket is ready again,
+
+## Cleanup
 
 ```jsx
-kubectl get resourcegroups
+
+kubectl delete bucket $BUCKET_NAME
+minikube stop
+minikube delete  
 ```
-
-We can watch the provisioning of our cluster through
-
-```jsx
-watch kubectl get aksclusters
-
-kubectl describe aksclusters
-```
-
-And connect to our Azure cluster as well
-
-```jsx
-az aks get-credentials --resource-group myResourceGroup --name myAKSCluster
-
-az aks get-credentials --resource-group anais-resource --name anais-crossplane-demo
-```
-
-Something that Terraform, Pulumi etc. does not have — this is a feature of Crossplane
-
-1. Correct cluster manually — do what should not be done 
-2. Crossplane will keep whatever state we defined before, even if we change the state of our cluster through the UI
-
-Add a node pool to see how crossplane will downscale the pool
-
-```jsx
-az aks nodepool add \
-    --resource-group myResourceGroup \
-    --cluster-name myAKSCluster \
-    --name mynodepool \
-    --node-count 3
-```
-
-The next step is using GitOps to deploy our infrastructure
-
-### Install and application
-
-I have already set-up the example Azure voting app. Now I will deploy those resources
-
-```jsx
-kubectl apply -f ./app/voting.yaml
-```
-
-And we can get the service resource with
-
-```jsx
-kubectl get service azure-vote-front --watch
-```
-
-Since this is a service of type LoadBalancer, we can access it through the External-IP
-
-## Uninstall Provider
-
-Let’s check whether there are any managed resources before deleting the
-provider.
-
-`kubectl get managed`
-
-If there are any, please delete them first, so you don’t lose the track of them.
-Then delete all the `ProviderConfig`s you created. An example command if you used
-AWS Provider:
-
-`kubectl delete providerconfig.aws --all`
-
-List installed providers:
-
-`kubectl get provider.pkg`
-
-Delete the one you want to delete:
-
-`kubectl delete provider.pkg <provider-name>`
-
-## Uninstall Crossplane
-
-`helm delete crossplane --namespace crossplane-system
-
-kubectl delete namespace crossplane-system`
-
-Helm does not delete CRD objects. You can delete the ones Crossplane created with
-the following commands:
-
-`kubectl patch lock lock -p '{"metadata":{"finalizers": []}}' --type=merge
-kubectl get crd -o name | grep crossplane.io | xargs kubectl delete`
-
-Connecting Crossplane with ArgoCD
-
-[https://aws.amazon.com/blogs/opensource/connecting-aws-managed-services-to-your-argo-cd-pipeline-with-open-source-crossplane/](https://aws.amazon.com/blogs/opensource/connecting-aws-managed-services-to-your-argo-cd-pipeline-with-open-source-crossplane/)
