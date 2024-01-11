@@ -61,4 +61,4 @@ Argo CD is a part of the Argo project and a [CNCF Graduated project](https://lan
 * Community Support
   * Benefits from the support and innovation of the community.
 
-[Hands on Exercise](https://roozy-io.github.io/idp/tools/argocd.html)
+[Hands on Exercise](https://killercoda.com/shahrooz33ce/scenario/argo_cd_intro)
