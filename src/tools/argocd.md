@@ -17,48 +17,46 @@ Argo CD is a part of the Argo project and a [CNCF Graduated project](https://lan
 
 ## Pull vs. Push Model in GitOps
 
-* Internal Agent
-  * In the pull model, an internal agent within the cluster actively checks for changes.
-* Enhanced Security
-  * Pull model reduces attack vectors compared to external push triggers.
-* Self-Managed
-  * Clusters can self-manage and update without external dependencies.
-* Consistent State
-  * Ensures the cluster state is always consistent with the repository.
-* Resilience
-  * Pull systems are not dependent on external services for deployment.
-* Cluster Autonomy
-  * The cluster autonomously applies approved changes.
-* Reduced Credentials Exposure
-  * No need for credentials to be stored outside the cluster.
-* Scalability
-  * Pull model scales better as it offloads the work to individual clusters.
-* Event-Driven Updates:
-  * Can be configured to update based on events, making it more dynamic.
-* Lower Overhead
-  * Less overhead on CI systems as the cluster handles the deployment work.
+* **Enhanced Security and Autonomy**:
+  * Pull model enhances security by reducing attack vectors.
+  * Allows for cluster autonomy by applying changes internally.
+
+* **Self-Management and Consistency**:
+  * Clusters are self-managed, updating without external dependencies.
+  * Ensures a consistent state with the repository.
+
+* **Resilience and Reduced Credential Exposure**:
+  * Pull systems are resilient, not relying on external services.
+  * Minimizes credential exposure outside the cluster.
+
+* **Scalability and Dynamic Updates**:
+  * Better scalability by offloading work to individual clusters.
+  * Supports event-driven, dynamic updates.
+
+* **Operational Efficiency**:
+  * Reduces overhead on CI systems, with the cluster managing deployment work.
+  * Leads to lower operational complexity.
 
 ## Benefits
 
-* Enhanced Security
-  * Leverages Git's robust security features, ensuring that only approved changes are deployed.
-* Automated Synchronization
-  * Automatically syncs the current state with the desired state defined in Git.
-* Easy Rollbacks
-  * Facilitates easy rollback to previous states in case of failures.
-* Declarative Setup
-  * Encourages infrastructure as code, improving consistency and traceability.
-* Reduced Complexity
-  * Simplifies complex deployments with its user-friendly interface.
-* Open Source
-  * No cost for usage and open to community contributions.
-* Real-Time Monitoring
-  * Provides a real-time view of the application's status.
-* Multi-Cluster Support
-  * Manages deployments across multiple Kubernetes clusters.
-* Self-Healing
-  * Automatically corrects detected drifts from the desired state.
-* Community Support
-  * Benefits from the support and innovation of the community.
+* **Robust Security and Automated Synchronization**:
+  * Utilizes Git's security features for safe deployments.
+  * Automatically syncs states as defined in Git.
+
+* **Ease of Operations**:
+  * Facilitates easy rollbacks.
+  * Encourages declarative infrastructure setup.
+  * Simplifies complex deployments.
+
+* **Cost-Effective and Community-Driven**:
+  * Open-source nature allows free usage and community contributions.
+
+* **Real-Time Oversight and Multi-Cluster Management**:
+  * Offers real-time application status monitoring.
+  * Manages deployments across multiple clusters.
+
+* **Self-Healing and Community Support**:
+  * Automatically corrects state drifts.
+  * Benefits from the support and innovation of the GitOps community.
 
 [Hands on Exercise](https://killercoda.com/shahrooz33ce/scenario/argo_cd_intro)
