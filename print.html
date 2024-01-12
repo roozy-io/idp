@@ -2660,107 +2660,77 @@ information.</li>
 <p><img src="tools/../assets/image.png" alt="Pull vs. Push" /></p>
 <h2 id="pull-vs-push-model-in-gitops"><a class="header" href="#pull-vs-push-model-in-gitops">Pull vs. Push Model in GitOps</a></h2>
 <ul>
-<li>Internal Agent
+<li>
+<p><strong>Enhanced Security and Autonomy</strong>:</p>
 <ul>
-<li>In the pull model, an internal agent within the cluster actively checks for changes.</li>
+<li>Pull model enhances security by reducing attack vectors.</li>
+<li>Allows for cluster autonomy by applying changes internally.</li>
 </ul>
 </li>
-<li>Enhanced Security
+<li>
+<p><strong>Self-Management and Consistency</strong>:</p>
 <ul>
-<li>Pull model reduces attack vectors compared to external push triggers.</li>
+<li>Clusters are self-managed, updating without external dependencies.</li>
+<li>Ensures a consistent state with the repository.</li>
 </ul>
 </li>
-<li>Self-Managed
+<li>
+<p><strong>Resilience and Reduced Credential Exposure</strong>:</p>
 <ul>
-<li>Clusters can self-manage and update without external dependencies.</li>
+<li>Pull systems are resilient, not relying on external services.</li>
+<li>Minimizes credential exposure outside the cluster.</li>
 </ul>
 </li>
-<li>Consistent State
+<li>
+<p><strong>Scalability and Dynamic Updates</strong>:</p>
 <ul>
-<li>Ensures the cluster state is always consistent with the repository.</li>
+<li>Better scalability by offloading work to individual clusters.</li>
+<li>Supports event-driven, dynamic updates.</li>
 </ul>
 </li>
-<li>Resilience
+<li>
+<p><strong>Operational Efficiency</strong>:</p>
 <ul>
-<li>Pull systems are not dependent on external services for deployment.</li>
-</ul>
-</li>
-<li>Cluster Autonomy
-<ul>
-<li>The cluster autonomously applies approved changes.</li>
-</ul>
-</li>
-<li>Reduced Credentials Exposure
-<ul>
-<li>No need for credentials to be stored outside the cluster.</li>
-</ul>
-</li>
-<li>Scalability
-<ul>
-<li>Pull model scales better as it offloads the work to individual clusters.</li>
-</ul>
-</li>
-<li>Event-Driven Updates:
-<ul>
-<li>Can be configured to update based on events, making it more dynamic.</li>
-</ul>
-</li>
-<li>Lower Overhead
-<ul>
-<li>Less overhead on CI systems as the cluster handles the deployment work.</li>
+<li>Reduces overhead on CI systems, with the cluster managing deployment work.</li>
+<li>Leads to lower operational complexity.</li>
 </ul>
 </li>
 </ul>
 <h2 id="benefits"><a class="header" href="#benefits">Benefits</a></h2>
 <ul>
-<li>Enhanced Security
+<li>
+<p><strong>Robust Security and Automated Synchronization</strong>:</p>
 <ul>
-<li>Leverages Git's robust security features, ensuring that only approved changes are deployed.</li>
+<li>Utilizes Git's security features for safe deployments.</li>
+<li>Automatically syncs states as defined in Git.</li>
 </ul>
 </li>
-<li>Automated Synchronization
+<li>
+<p><strong>Ease of Operations</strong>:</p>
 <ul>
-<li>Automatically syncs the current state with the desired state defined in Git.</li>
+<li>Facilitates easy rollbacks.</li>
+<li>Encourages declarative infrastructure setup.</li>
+<li>Simplifies complex deployments.</li>
 </ul>
 </li>
-<li>Easy Rollbacks
+<li>
+<p><strong>Cost-Effective and Community-Driven</strong>:</p>
 <ul>
-<li>Facilitates easy rollback to previous states in case of failures.</li>
+<li>Open-source nature allows free usage and community contributions.</li>
 </ul>
 </li>
-<li>Declarative Setup
+<li>
+<p><strong>Real-Time Oversight and Multi-Cluster Management</strong>:</p>
 <ul>
-<li>Encourages infrastructure as code, improving consistency and traceability.</li>
+<li>Offers real-time application status monitoring.</li>
+<li>Manages deployments across multiple clusters.</li>
 </ul>
 </li>
-<li>Reduced Complexity
+<li>
+<p><strong>Self-Healing and Community Support</strong>:</p>
 <ul>
-<li>Simplifies complex deployments with its user-friendly interface.</li>
-</ul>
-</li>
-<li>Open Source
-<ul>
-<li>No cost for usage and open to community contributions.</li>
-</ul>
-</li>
-<li>Real-Time Monitoring
-<ul>
-<li>Provides a real-time view of the application's status.</li>
-</ul>
-</li>
-<li>Multi-Cluster Support
-<ul>
-<li>Manages deployments across multiple Kubernetes clusters.</li>
-</ul>
-</li>
-<li>Self-Healing
-<ul>
-<li>Automatically corrects detected drifts from the desired state.</li>
-</ul>
-</li>
-<li>Community Support
-<ul>
-<li>Benefits from the support and innovation of the community.</li>
+<li>Automatically corrects state drifts.</li>
+<li>Benefits from the support and innovation of the GitOps community.</li>
 </ul>
 </li>
 </ul>
