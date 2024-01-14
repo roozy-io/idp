@@ -2,7 +2,7 @@
 
 ## Links
 
-* [Video by Shahrooz Aghili on Argo CD](https://youtu.be/v=)
+* [Video by Shahrooz Aghili on Argo CD](https://youtu.be/YjW_EL9rqCg)
 * [Argo CD](https://argoproj.github.io/cd/)
 * [Docs](https://argo-cd.readthedocs.io/en/stable/)
 * [The DevOps Toolkit](https://www.youtube.com/c/DevOpsToolkit/videos) has several great explanations and tutorials around GitOps and ArgoCD
