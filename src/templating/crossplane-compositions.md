@@ -128,7 +128,7 @@ kubectl get compositeclusters
 ```
 
 ```
- kubectl describe CompositeCluster a-team-gke 
+kubectl describe CompositeCluster a-team-gke 
 ```
 
 ```
