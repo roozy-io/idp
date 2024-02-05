@@ -2149,6 +2149,11 @@ kubectl --namespace crossplane-system \
     create secret generic gcp-creds \
     --from-file creds=./gcp-creds.json
 </code></pre>
+<h3 id="clone-playbook"><a class="header" href="#clone-playbook">clone playbook</a></h3>
+<pre><code>git clone https://github.com/aghilish/crossplane-compositions-vs-terraform-modules.git
+
+cd crossplane-compositions-vs-terraform-modules
+</code></pre>
 <h3 id="install-dependencies"><a class="header" href="#install-dependencies">install dependencies</a></h3>
 <pre><code>kubectl apply --filename dependencies.yaml
 </code></pre>
