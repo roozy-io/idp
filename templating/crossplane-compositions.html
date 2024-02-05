@@ -254,10 +254,10 @@ spec:
 <pre><code>kubectl apply --filename composition.yaml
 </code></pre>
 <h3 id="create-infra-namespace"><a class="header" href="#create-infra-namespace">create infra namespace</a></h3>
-<pre><code>kubectl create ns infra
+<pre><code>kubectl create namespace a-team
 </code></pre>
 <h3 id="apply-claim"><a class="header" href="#apply-claim">apply claim</a></h3>
-<pre><code>kubectl apply --filename a-team-gke/claim.yaml -n infra
+<pre><code>kubectl apply --filename a-team-gke/claim.yaml -n a-team
 </code></pre>
 <h3 id="verify-resources"><a class="header" href="#verify-resources">verify resources</a></h3>
 <pre><code>kubectl describe composition cluster-google
@@ -271,7 +271,7 @@ spec:
 <pre><code>kubectl get clusters,nodepools
 </code></pre>
 <h3 id="access-the-gke-cluster"><a class="header" href="#access-the-gke-cluster">access the GKE cluster</a></h3>
-<pre><code>kubectl --namespace infra  \
+<pre><code>kubectl --namespace a-team  \
     get secret a-team-gke-cluster \
     --output jsonpath=&quot;{.data.kubeconfig}&quot; \
     | base64 -d \
@@ -286,7 +286,7 @@ kubectl get namespaces
 </code></pre>
 <h3 id="destroy-infrastructure"><a class="header" href="#destroy-infrastructure">destroy infrastructure</a></h3>
 <pre><code>unset KUBECONFIG
-kubectl delete -n  infra --filename a-team-gke/claim.yaml
+kubectl delete -n a-team --filename a-team/claim.yaml
 </code></pre>
 
                     </main>
