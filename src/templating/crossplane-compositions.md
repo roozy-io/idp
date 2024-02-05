@@ -61,6 +61,13 @@ kubectl --namespace crossplane-system \
     --from-file creds=./gcp-creds.json
 ```
 
+### clone playbook
+```
+git clone https://github.com/aghilish/crossplane-compositions-vs-terraform-modules.git
+
+cd crossplane-compositions-vs-terraform-modules
+```
+
 ### install dependencies
 ```
 kubectl apply --filename dependencies.yaml
