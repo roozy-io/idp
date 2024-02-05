@@ -37,6 +37,7 @@
 - [Kustomize](./templating/kustomize.md)
 - [Terraform](./templating/terraform.md)
 - [Crossplane](./templating/crossplane.md)
+- [Crossplane Compositions](./templating/crossplane-compositions.md)
 
 # Helm
 
