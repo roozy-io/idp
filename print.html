@@ -2149,15 +2149,11 @@ kubectl --namespace crossplane-system \
     create secret generic gcp-creds \
     --from-file creds=./gcp-creds.json
 </code></pre>
-<h3 id="install-gcp-provider"><a class="header" href="#install-gcp-provider">install GCP provider</a></h3>
-<pre><code>cat &lt;&lt;EOF | kubectl create -f -
-apiVersion: pkg.crossplane.io/v1
-kind: Provider
-metadata:
-  name: provider-gcp-container
-spec:
-  package: xpkg.upbound.io/upbound/provider-gcp-container:v0.41.1
-EOF
+<h3 id="install-dependencies"><a class="header" href="#install-dependencies">install dependencies</a></h3>
+<pre><code>kubectl apply --filename dependencies.yaml
+</code></pre>
+<h3 id="wait-for-all-the-packages-to-become-healthy"><a class="header" href="#wait-for-all-the-packages-to-become-healthy">wait for all the packages to become healthy</a></h3>
+<pre><code>watch kubectl get pkgrev
 </code></pre>
 <h3 id="configure-provider"><a class="header" href="#configure-provider">configure provider</a></h3>
 <pre><code>PROJECT_ID=$(gcloud config get-value project)
