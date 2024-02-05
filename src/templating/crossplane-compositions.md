@@ -103,14 +103,14 @@ kubectl apply --filename composition.yaml
 
 ### create infra namespace
 ```
-kubectl create ns infra
+kubectl create namespace a-team
 ```
 
 
 ### apply claim
 
 ```
-kubectl apply --filename a-team-gke/claim.yaml -n infra
+kubectl apply --filename a-team-gke/claim.yaml -n a-team
 ```
 
 ### verify resources
@@ -137,7 +137,7 @@ kubectl get clusters,nodepools
 
 ### access the GKE cluster
 ```
-kubectl --namespace infra  \
+kubectl --namespace a-team  \
     get secret a-team-gke-cluster \
     --output jsonpath="{.data.kubeconfig}" \
     | base64 -d \
@@ -155,5 +155,5 @@ kubectl get namespaces
 
 ```
 unset KUBECONFIG
-kubectl delete -n  infra --filename a-team-gke/claim.yaml
+kubectl delete -n a-team --filename a-team/claim.yaml
 ```
