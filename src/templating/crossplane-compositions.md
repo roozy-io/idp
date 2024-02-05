@@ -61,16 +61,14 @@ kubectl --namespace crossplane-system \
     --from-file creds=./gcp-creds.json
 ```
 
-### install GCP provider
+### install dependencies
 ```
-cat <<EOF | kubectl create -f -
-apiVersion: pkg.crossplane.io/v1
-kind: Provider
-metadata:
-  name: provider-gcp-container
-spec:
-  package: xpkg.upbound.io/upbound/provider-gcp-container:v0.41.1
-EOF
+kubectl apply --filename dependencies.yaml
+```
+
+### wait for all the packages to become healthy
+```
+watch kubectl get pkgrev
 ```
 
 ### configure provider
