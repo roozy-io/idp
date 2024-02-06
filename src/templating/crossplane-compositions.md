@@ -117,7 +117,7 @@ kubectl create namespace a-team
 ### apply claim
 
 ```
-kubectl apply --filename a-team-gke/claim.yaml -n a-team
+kubectl apply --filename a-team/claim.yaml -n a-team
 ```
 
 ### verify resources
