@@ -265,13 +265,9 @@ spec:
 <pre><code>kubectl apply --filename a-team/claim.yaml -n a-team
 </code></pre>
 <h3 id="verify-resources"><a class="header" href="#verify-resources">verify resources</a></h3>
-<pre><code>kubectl describe composition cluster-google
+<pre><code>kubectl get clusterclaims.example.org -n a-team
 </code></pre>
-<pre><code>kubectl explain CompositeCluster --recursive
-</code></pre>
-<pre><code>kubectl get compositeclusters
-</code></pre>
-<pre><code>kubectl describe CompositeCluster a-team-gke 
+<pre><code>kubectl describe CompositeCluster.example.org
 </code></pre>
 <pre><code>kubectl get clusters,nodepools
 </code></pre>
