@@ -122,20 +122,13 @@ kubectl apply --filename a-team/claim.yaml -n a-team
 
 ### verify resources
 
+
 ```
-kubectl describe composition cluster-google
+kubectl get clusterclaims.example.org -n a-team
 ```
 
 ```
-kubectl explain CompositeCluster --recursive
-```
-
-```
-kubectl get compositeclusters
-```
-
-```
-kubectl describe CompositeCluster a-team-gke 
+kubectl describe CompositeCluster.example.org
 ```
 
 ```
