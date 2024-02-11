@@ -2,7 +2,7 @@
 
 ## Links
 
-* [Video By Shahrooz Aghili](https://www.youtube.com/watch?v)
+* [Video By Shahrooz Aghili](https://www.youtube.com/watch?v=Ysg-u2ba88I)
 * [Crossplane](https://crossplane.io/)
 * [Docs](https://docs.crossplane.io/)
 
