@@ -38,6 +38,8 @@
 - [Terraform](./templating/terraform.md)
 - [Crossplane](./templating/crossplane.md)
 - [Crossplane Compositions](./templating/crossplane-compositions.md)
+- [Crossplane Composition Functions](./templating/crossplane-composition-functions.md)
+
 
 # Helm
 
