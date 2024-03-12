@@ -2267,7 +2267,7 @@ That makes updates more flexible.</p>
 Just like in unix pipelines the stdout of one command is piped as stdin to the next one, in crossplane a yaml or json represenation of the
 desired state is passed into functions. Each function in the pipeline can mutate the state but may not omit any data from the state.
 Eventually after the pipeline is done, the final desired state is fed into the crossplane provider.</p>
-<img src="templating/../assets/xfn-pipeline.png" alt="Functions Pipeline" width="50%">
+<img src="templating/../assets/xfn-pipeline.png" alt="Functions Pipeline" width="100%">
 <figcaption>From Steven Borrelli's presentation at OSSummit 2023</figcaption>
 <h2 id="functions-benefits"><a class="header" href="#functions-benefits">Functions Benefits</a></h2>
 <ul>
@@ -2292,7 +2292,7 @@ Eventually after the pipeline is done, the final desired state is fed into the c
 Each Container is a gRPC server which interacts with crossplane providers.
 Crossplane providers sends a <code>RunFunctionRequest</code> to the function along with the desired state (yaml text) 
 and gets back a <code>RunFunctionResponse</code> with the mutated desired state (modified yaml). And that's all there is to it... :D</p>
-<img src="templating/../assets/xfn-internals.png" alt="Functions and Providers" width="50%">
+<img src="templating/../assets/xfn-internals.png" alt="Functions and Providers" width="100%">
 <figcaption>From Steven Borrelli's presentation at OSSummit 2023</figcaption>
 <pre><code class="language-protobuf">message RunFunctionRequest {
     RequestMeta meta = 1;
