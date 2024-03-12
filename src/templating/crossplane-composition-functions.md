@@ -62,7 +62,7 @@ Just like in unix pipelines the stdout of one command is piped as stdin to the n
 desired state is passed into functions. Each function in the pipeline can mutate the state but may not omit any data from the state.
 Eventually after the pipeline is done, the final desired state is fed into the crossplane provider.
 
-<img src="../assets/xfn-pipeline.png" alt="Functions Pipeline" width="50%">
+<img src="../assets/xfn-pipeline.png" alt="Functions Pipeline" width="100%">
 <figcaption>From Steven Borrelli's presentation at OSSummit 2023</figcaption>
    
 
@@ -84,7 +84,7 @@ Each Container is a gRPC server which interacts with crossplane providers.
 Crossplane providers sends a `RunFunctionRequest` to the function along with the desired state (yaml text) 
 and gets back a `RunFunctionResponse` with the mutated desired state (modified yaml). And that's all there is to it... :D
 
-<img src="../assets/xfn-internals.png" alt="Functions and Providers" width="50%">
+<img src="../assets/xfn-internals.png" alt="Functions and Providers" width="100%">
 <figcaption>From Steven Borrelli's presentation at OSSummit 2023</figcaption>
 
 ```protobuf
