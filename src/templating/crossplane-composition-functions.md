@@ -6,6 +6,7 @@
 * [Video By Steven Borrelli](https://www.youtube.com/watch?v=n0j5WiavXEI)
 * [Intro to Crossplane - Video by Shahrooz Aghili ](https://youtu.be/iqc2VAxsH_s)
 * [Crossplane Compositions vs Terraform Modules - Video by Shahrooz Aghili ](https://www.youtube.com/watch?v=Ysg-u2ba88I)
+* [How to Write a Crossplane Composition Function in Go](https://docs.crossplane.io/knowledge-base/guides/write-a-composition-function-in-go)
 * [Crossplane](https://crossplane.io/)
 * [Docs](https://docs.crossplane.io/)
 
@@ -17,7 +18,7 @@
 > Terraform allows platform engineers to define modules and compose terraform resources.
 
 > As Crossplane is an extension to the kuberenets api, the resources need to be defined as
-> an arry in `yaml`. This makes the configuration management a tedious task, especially if the composition
+> an array in `yaml`. This makes the configuration management a tedious task, especially if the composition
 > consists of many resources. There will be too much yaml to handle. 
 > Starting from version `1.11`, crossplane introduced the `v1alpha1` version of the composition functions.
 > With version `1.14` the functions api is versioned at `v1beta1`. 
