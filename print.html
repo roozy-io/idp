@@ -2308,44 +2308,67 @@ and gets back a <code>RunFunctionResponse</code> with the mutated desired state 
 cd function-add-k8s-labels-annotations
 
 </code></pre>
-<h3 id="start-kind-cluster"><a class="header" href="#start-kind-cluster">Start Kind Cluster</a></h3>
-<pre><code>kind create cluster --wait 5m
-</code></pre>
-<h3 id="install-crossplane-with-debug-flag"><a class="header" href="#install-crossplane-with-debug-flag">Install crossplane with debug flag</a></h3>
-<pre><code>helm repo add crossplane-master https://charts.crossplane.io/master --force-update
+<h3 id="build-and-push-the-oci-container-image"><a class="header" href="#build-and-push-the-oci-container-image">Build and Push the OCI container image</a></h3>
+<pre><code class="language-shell"># Run code generation - see input/generate.go
+$ go generate ./...
+# Run tests - see fn_test.go
+$ go test ./...
 
-helm upgrade --install crossplane --namespace crossplane-system --create-namespace crossplane-master/crossplane --devel --set &quot;args={--debug,--enable-usages}&quot;
+$ export TAG=v0.0.1
+
+$ docker image build --tag c8n.io/aghilish/function-add-k8s-labels-annotations:$TAG .
+
+$ docker image push c8n.io/aghilish/function-add-k8s-labels-annotations:$TAG
+
+$ yq --inplace &quot;.spec.package = \&quot;c8n.io/aghilish/function-add-k8s-labels-annotations:$TAG\&quot;&quot; example/production/functions.yaml
 </code></pre>
-<h3 id="install-functions"><a class="header" href="#install-functions">Install functions</a></h3>
-<p>Install the functions by applying the manifests in <a href="templating/manifests/function.yaml">manifests/function.yaml</a>:</p>
-<pre><code class="language-console">kubectl apply -f manifests/function.yaml
+<h2 id="running-locally"><a class="header" href="#running-locally">Running locally</a></h2>
+<p>You can run your function locally and test it using <code>crossplane beta render</code>
+with these example manifests.</p>
+<pre><code class="language-shell"># Run the function locally
+$ go run . --insecure --debug
 </code></pre>
-<h3 id="ensure-the-functions-are-installed"><a class="header" href="#ensure-the-functions-are-installed">Ensure the Functions are installed</a></h3>
-<pre><code class="language-console">kubectl get Function 
+<pre><code class="language-shell"># Then, in another terminal, call it with these example manifests
+$ cd example/local
+$ crossplane beta render xr.yaml composition.yaml functions.yaml -r
 </code></pre>
-<h3 id="install-the-aws-provider-and-composition"><a class="header" href="#install-the-aws-provider-and-composition">Install the AWS Provider and Composition</a></h3>
-<pre><code class="language-console">kubectl apply -f manifests/aws-vpc-composition/
-kubectl apply -f manifests/aws-provider.yaml
+<h2 id="build-runtime-image"><a class="header" href="#build-runtime-image">Build runtime image</a></h2>
+<pre><code class="language-shell"># Build the function's runtime image - see Dockerfile
+$ docker build . --tag=runtime
+
+# Build a function package - see package/crossplane.yaml
+$ crossplane xpkg build -f package --embed-runtime-image=runtime
 </code></pre>
-<h3 id="config-aws-provider"><a class="header" href="#config-aws-provider">Config AWS Provider</a></h3>
-<p>Set up the <code>ProviderConfig</code> to authenticate to AWS. It should point to a
-Kubernetes secret that contains AWS authentication information.</p>
-<pre><code class="language-console">kubectl create secret \
-generic aws-creds \
--n crossplane-system \
---from-file=creds=./aws-credentials.txt
-</code></pre>
-<pre><code class="language-console">kubectl apply -f manifests/aws-providerconfig-default.yaml
-</code></pre>
-<h3 id="creating-a-network-claim"><a class="header" href="#creating-a-network-claim">Creating a Network Claim</a></h3>
-<p>The Example Claim creates a VPC and InternetGateway. After the
-composition pipelines are complete, each resource should have
-the labels and annotations in the Composition pipeline input added.</p>
-<pre><code class="language-console">kubectl apply -f manifests/examples/network-claim.yaml
+<h2 id="production-deployment"><a class="header" href="#production-deployment">Production Deployment</a></h2>
+<pre><code class="language-shell">$ kind create cluster --wait 5m
+
+$ helm repo add crossplane-master https://charts.crossplane.io/master --force-update
+
+$ helm upgrade --install crossplane --namespace crossplane-system --create-namespace crossplane-master/crossplane --devel --set &quot;args={--debug,--enable-usages}&quot;
+
+$ cd example/production
+
+$ kubectl apply -f functions.yaml
+
+## wait untily healthy
+$ kubectl get function -w
+
+$ kubectl apply -f composition.yaml
+$ kubectl apply -f xrd.yaml
+
+$ kubectl apply -f aws-provider.yaml
+$ kubectl apply -f aws-providerconfig.yaml
+
+$ kubectl create secret generic aws-creds -n crossplane-system --from-file=creds=./aws-credentials.txt
+# The Example Claim creates a VPC and InternetGateway. After the
+# composition pipelines are complete, each resource should have
+# the labels and annotations in the Composition pipeline input added.
+$ kubectl apply -f claim.yaml
+
 </code></pre>
 <h3 id="destroy-infrastructure-1"><a class="header" href="#destroy-infrastructure-1">Destroy Infrastructure</a></h3>
-<pre><code class="language-console">kubectl delete -f manifests/examples/network-claim.yaml
-kind delete clusters kind
+<pre><code class="language-shell">$ kubectl delete -f claim.yaml
+$ kind delete clusters kind
 </code></pre>
 <h1 id="helm"><a class="header" href="#helm">Helm</a></h1>
 <h1 id="100days-resources-17"><a class="header" href="#100days-resources-17">100Days Resources</a></h1>
