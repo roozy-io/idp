@@ -2,7 +2,7 @@
 
 ## Links
 
-* [Video By Shahrooz Aghili](https://www.youtube.com/watch?v=)
+* [Video By Shahrooz Aghili](https://youtu.be/m6-xIhQcCe4)
 * [Video By Steven Borrelli](https://www.youtube.com/watch?v=n0j5WiavXEI)
 * [Intro to Crossplane - Video by Shahrooz Aghili ](https://youtu.be/iqc2VAxsH_s)
 * [Crossplane Compositions vs Terraform Modules - Video by Shahrooz Aghili ](https://www.youtube.com/watch?v=Ysg-u2ba88I)
@@ -26,7 +26,7 @@
 ## Limitations of Compositions
 Managing resources with an array has this limitations.
 
-### loops
+### Loops
 There is no way to loop through a list to provision resources
 ```
 for subnet in subnets
