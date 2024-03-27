@@ -42,8 +42,8 @@ if condition is true then
 
 ### Flexibility
 
-Functions are developed in separate release cycles as crossplane core. 
-That makes updates more flexible.
+Functions are developed in separate release cycles from crossplane core. 
+This makes updates more flexible.
 
 ## Functions Goals
 The crossplane team aims to achive these goals with functions
