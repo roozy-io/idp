@@ -81,7 +81,7 @@ Eventually after the pipeline is done, the final desired state is fed into the c
 
 ### Functions Internals
 Functions are OCI (Docker) Containers.
-Each Container is a gRPC server which interacts with crossplane providers.
+Each Container is a gRPC server which interacts with crossplane pods (core).
 Crossplane core sends a `RunFunctionRequest` to the function along with the desired state (yaml text) 
 and gets back a `RunFunctionResponse` with the mutated desired state (modified yaml). Once all the functions in the pipeline are done, the final desired state is handed over to the provider. And that's all there is to it... :D
 
