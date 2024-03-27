@@ -2290,7 +2290,7 @@ Eventually after the pipeline is done, the final desired state is fed into the c
 </ul>
 <h3 id="functions-internals"><a class="header" href="#functions-internals">Functions Internals</a></h3>
 <p>Functions are OCI (Docker) Containers.
-Each Container is a gRPC server which interacts with crossplane providers.
+Each Container is a gRPC server which interacts with crossplane pods (core).
 Crossplane core sends a <code>RunFunctionRequest</code> to the function along with the desired state (yaml text) 
 and gets back a <code>RunFunctionResponse</code> with the mutated desired state (modified yaml). Once all the functions in the pipeline are done, the final desired state is handed over to the provider. And that's all there is to it... :D</p>
 <img src="templating/../assets/xfn-internals.png" alt="Functions and Providers" width="100%">
