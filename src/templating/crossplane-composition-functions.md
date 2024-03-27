@@ -82,8 +82,8 @@ Eventually after the pipeline is done, the final desired state is fed into the c
 ### Functions Internals
 Functions are OCI (Docker) Containers.
 Each Container is a gRPC server which interacts with crossplane providers.
-Crossplane providers sends a `RunFunctionRequest` to the function along with the desired state (yaml text) 
-and gets back a `RunFunctionResponse` with the mutated desired state (modified yaml). And that's all there is to it... :D
+Crossplane core sends a `RunFunctionRequest` to the function along with the desired state (yaml text) 
+and gets back a `RunFunctionResponse` with the mutated desired state (modified yaml). Once all the functions in the pipeline are done, the final desired state is handed over to the provider. And that's all there is to it... :D
 
 <img src="../assets/xfn-internals.png" alt="Functions and Providers" width="100%">
 <figcaption>From Steven Borrelli's presentation at OSSummit 2023</figcaption>
