@@ -3470,33 +3470,10 @@ member election process</li>
 <p>There is a specific pattern for writing client programs that work well with Kubernetes called the controller pattern. Controllers typically read an object's <code>.spec</code>, possibly do things, and then update the object's <code>.status</code>.</p>
 </blockquote>
 <blockquote>
-<p>Extension Points
+<p>Extension Points <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
 <img src="tutorials/../assets/extension-points.png" alt="K8s Extension Points" width="100%"></p>
 </blockquote>
-<ol>
-<li>
-<p>Users often interact with the Kubernetes API using kubectl. Plugins customise the behaviour of clients. There are generic extensions that can apply to different clients, as well as specific ways to extend kubectl.</p>
-</li>
-<li>
-<p>The API server handles all requests. Several types of extension points in the API server allow authenticating requests, or blocking them based on their content, editing content, and handling deletion. These are described in the API Access Extensions section.</p>
-</li>
-<li>
-<p>The API server serves various kinds of resources. Built-in resource kinds, such as pods, are defined by the Kubernetes project and can't be changed. Read API extensions to learn about extending the Kubernetes API.</p>
-</li>
-<li>
-<p>The Kubernetes scheduler decides which nodes to place pods on. There are several ways to extend scheduling, which are described in the Scheduling extensions section.</p>
-</li>
-<li>
-<p>Much of the behavior of Kubernetes is implemented by programs called controllers, that are clients of the API server. Controllers are often used in conjunction with custom resources. Read combining new APIs with automation and Changing built-in resources to learn more.</p>
-</li>
-<li>
-<p>The kubelet runs on servers (nodes), and helps pods appear like virtual servers with their own IPs on the cluster network. Network Plugins allow for different implementations of pod networking.</p>
-</li>
-<li>
-<p>You can use Device Plugins to integrate custom hardware or other special node-local facilities, and make these available to Pods running in your cluster. The kubelet includes support for working with device plugins.</p>
-</li>
-</ol>
-<p>The kubelet also mounts and unmounts volume for pods and their containers. You can use Storage Plugins to add support for new kinds of storage and other volume types.</p>
+<h1 id="in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api"><a class="header" href="#in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api">In this tutorial we will be focusing on extension point 2 (Kubernetes API).</a></h1>
 <h1 id="serverless"><a class="header" href="#serverless">Serverless</a></h1>
 <h1 id="100days-resources-25"><a class="header" href="#100days-resources-25">100Days Resources</a></h1>
 <ul>
