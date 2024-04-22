@@ -65,6 +65,7 @@
 
 # Tutorials and Practice
 
+- [Extending Kubernetes](./tutorials/extending-k8s.md)
 - [Serverless](./tutorials/serverless.md)
 - [Ingress from scratch](./tutorials/ingress-from-scratch.md)
 - [Istio from scratch](./tutorials/istio-from-scratch.md)
