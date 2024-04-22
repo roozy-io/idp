@@ -3474,6 +3474,79 @@ member election process</li>
 <img src="tutorials/../assets/extension-points.png" alt="K8s Extension Points" width="100%"></p>
 </blockquote>
 <h1 id="in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api"><a class="header" href="#in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api">In this tutorial we will be focusing on extension point 2 (Kubernetes API).</a></h1>
+<pre><code class="language-shell">kind create cluster
+</code></pre>
+<p>let's start by using the <code>custom resource definition</code> api of kubernetes. 
+let's create a custom resource called <code>CronTab</code></p>
+<pre><code class="language-shell">kubectl apply -f - &lt;&lt; EOF
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  # name must match the spec fields below, and be in the form: &lt;plural&gt;.&lt;group&gt;
+  name: crontabs.stable.example.com
+spec:
+  # group name to use for REST API: /apis/&lt;group&gt;/&lt;version&gt;
+  group: stable.example.com
+  # list of versions supported by this CustomResourceDefinition
+  versions:
+    - name: v1
+      # Each version can be enabled/disabled by Served flag.
+      served: true
+      # One and only one version must be marked as the storage version.
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                cronSpec:
+                  type: string
+                image:
+                  type: string
+                replicas:
+                  type: integer
+  # either Namespaced or Cluster
+  scope: Namespaced
+  names:
+    # plural name to be used in the URL: /apis/&lt;group&gt;/&lt;version&gt;/&lt;plural&gt;
+    plural: crontabs
+    # singular name to be used as an alias on the CLI and for display
+    singular: crontab
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: CronTab
+    # shortNames allow shorter string to match your resource on the CLI
+    shortNames:
+    - ct
+EOF
+</code></pre>
+<p>now our CronTab resource type is created. </p>
+<pre><code class="language-shell">kubectl get crd
+</code></pre>
+<p>A new namespaced RESTful API endpoint is created at:</p>
+<pre><code>/apis/stable.example.com/v1/namespaces/*/crontabs/...
+</code></pre>
+<p>Let's verify the k8s api extension by looking at the api server logs:</p>
+<pre><code class="language-shell">kubectl -n kube-system logs -f kube-apiserver-kind-control-plane | grep example.com
+</code></pre>
+<p>Now we can create custom objects of our new custom resource defintion.
+In the following example, the <code>cronSpec</code> and <code>image</code> custom fields are set in a custom object of kind <code>CronTab</code>. The kind <code>CronTab</code> comes from the <code>spec</code> of the CustomResourceDefinition object you created above.</p>
+<pre><code class="language-shell">kubectl apply -f - &lt;&lt; EOF
+apiVersion: &quot;stable.example.com/v1&quot;
+kind: CronTab
+metadata:
+  name: my-new-cron-object
+spec:
+  cronSpec: &quot;* * * * */5&quot;
+  image: my-awesome-cron-image
+EOF
+</code></pre>
+<pre><code class="language-shell">kubectl get crontab
+</code></pre>
+<p>Delete custom resource </p>
+<pre><code class="language-shell">kubectl delete CronTab my-new-cron-object
+</code></pre>
 <h1 id="serverless"><a class="header" href="#serverless">Serverless</a></h1>
 <h1 id="100days-resources-25"><a class="header" href="#100days-resources-25">100Days Resources</a></h1>
 <ul>
