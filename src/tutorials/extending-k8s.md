@@ -6,19 +6,34 @@
 # Learning Resources
 
 1. [Extending k8s](https://kubernetes.io/docs/concepts/extend-kubernetes/)
+2. [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 
 # Notes
 
 > Kubernetes is highly configurable and extensible. As a result, there is rarely a need to fork or submit patches to the Kubernetes project code.
- 
+
+> Extension Points [Details](https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure)
+<img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%">
+
+# In this tutorial we will be focusing on extension point 2 (Kubernetes API).
+| Declarative APIs | Imperative APIs |
+|-----------------|-----------------|
+| Your API consists of a relatively small number of relatively small objects (resources). | The client says "do this", and then gets a synchronous response back when it is done. |
+| The objects define configuration of applications or infrastructure. | The client says "do this", and then gets an operation ID back, and has to check a separate Operation object to determine completion of the request. |
+| The objects are updated relatively infrequently. | You talk about Remote Procedure Calls (RPCs). |
+| Humans often need to read and write the objects. | Directly storing large amounts of data; for example, > a few kB per object, or > 1000s of objects. |
+| The main operations on the objects are CRUD-y (creating, reading, updating and deleting). | High bandwidth access (10s of requests per second sustained) needed. |
+| Transactions across objects are not required: the API represents a desired state, not an exact state. | Store end-user data (such as images, PII, etc.) or other large-scale data processed by applications. |
+| | The natural operations on the objects are not CRUD-y. |
+| | The API is not easily modeled as objects. |
+| | You chose to represent pending operations with an operation ID or an operation object. |
+
 > Kubernetes is designed to be automated by writing client programs. Any program that reads and/or writes to the Kubernetes API can provide useful automation. Automation can run on the cluster or off it.
 
 > There is a specific pattern for writing client programs that work well with Kubernetes called the controller pattern. Controllers typically read an object's `.spec`, possibly do things, and then update the object's `.status`.
 
-> Extension Points [Details](https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure)
-<img src="../assets/extension-points.png" alt="K8s Extension Points" width="100%">
 
-# In this tutorial we will be focusing on extension point 2 (Kubernetes API).
+
 
 ```shell
 kind create cluster
@@ -57,6 +72,19 @@ spec:
                   type: string
                 replicas:
                   type: integer
+      
+      additionalPrinterColumns:
+        - name: Spec
+        type: string
+        description: The cron spec defining the interval a CronJob is run
+        jsonPath: .spec.cronSpec
+        - name: Replicas
+        type: integer
+        description: The number of jobs launched by the CronJob
+        jsonPath: .spec.replicas
+        - name: Age
+        type: date
+        jsonPath: .metadata.creationTimestamp
   # either Namespaced or Cluster
   scope: Namespaced
   names:
@@ -104,6 +132,18 @@ EOF
 
 ```shell
 kubectl get crontab
+```
+
+Let's see how our object is being persisted at the etcd database of k8s.
+
+```shell
+kubectl exec etcd-kind-control-plane -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get / --prefix --keys-only" | grep example.com
+
+kubectl exec etcd-kind-control-plane -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get /registry/apiextensions.k8s.io/customresourcedefinitions/crontabs.stable.example.com --prefix -w json" | jq ".kvs[0].value" | cut -d '"' -f2 | base64 --decode | yq > crd.yml
+
+kubectl exec etcd-kind-control-plane -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get /registry/apiregistration.k8s.io/apiservices/v1.stable.example.com --prefix -w json" | jq ".kvs[0].value" | cut -d '"' -f2 | base64 --decode | yq > api-registration.yml
+
+kubectl exec etcd-kind-control-plane -n kube-system -- sh -c "ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get /registry/stable.example.com/crontabs/default/my-new-cron-object --prefix -w json" | jq ".kvs[0].value" | cut -d '"' -f2 | base64 --decode | yq > mycron.yml
 ```
 
 Delete custom resource 
