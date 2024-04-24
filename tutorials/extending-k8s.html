@@ -178,22 +178,34 @@
 <h1 id="learning-resources"><a class="header" href="#learning-resources">Learning Resources</a></h1>
 <ol>
 <li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/">Extending k8s</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">Custom Resources</a></li>
 </ol>
 <h1 id="notes"><a class="header" href="#notes">Notes</a></h1>
 <blockquote>
 <p>Kubernetes is highly configurable and extensible. As a result, there is rarely a need to fork or submit patches to the Kubernetes project code.</p>
 </blockquote>
 <blockquote>
+<p>Extension Points <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
+<img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%"></p>
+</blockquote>
+<h1 id="in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api"><a class="header" href="#in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api">In this tutorial we will be focusing on extension point 2 (Kubernetes API).</a></h1>
+<table><thead><tr><th>Declarative APIs</th><th>Imperative APIs</th></tr></thead><tbody>
+<tr><td>Your API consists of a relatively small number of relatively small objects (resources).</td><td>The client says &quot;do this&quot;, and then gets a synchronous response back when it is done.</td></tr>
+<tr><td>The objects define configuration of applications or infrastructure.</td><td>The client says &quot;do this&quot;, and then gets an operation ID back, and has to check a separate Operation object to determine completion of the request.</td></tr>
+<tr><td>The objects are updated relatively infrequently.</td><td>You talk about Remote Procedure Calls (RPCs).</td></tr>
+<tr><td>Humans often need to read and write the objects.</td><td>Directly storing large amounts of data; for example, &gt; a few kB per object, or &gt; 1000s of objects.</td></tr>
+<tr><td>The main operations on the objects are CRUD-y (creating, reading, updating and deleting).</td><td>High bandwidth access (10s of requests per second sustained) needed.</td></tr>
+<tr><td>Transactions across objects are not required: the API represents a desired state, not an exact state.</td><td>Store end-user data (such as images, PII, etc.) or other large-scale data processed by applications.</td></tr>
+<tr><td></td><td>The natural operations on the objects are not CRUD-y.</td></tr>
+<tr><td></td><td>The API is not easily modeled as objects.</td></tr>
+<tr><td></td><td>You chose to represent pending operations with an operation ID or an operation object.</td></tr>
+</tbody></table>
+<blockquote>
 <p>Kubernetes is designed to be automated by writing client programs. Any program that reads and/or writes to the Kubernetes API can provide useful automation. Automation can run on the cluster or off it.</p>
 </blockquote>
 <blockquote>
 <p>There is a specific pattern for writing client programs that work well with Kubernetes called the controller pattern. Controllers typically read an object's <code>.spec</code>, possibly do things, and then update the object's <code>.status</code>.</p>
 </blockquote>
-<blockquote>
-<p>Extension Points <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
-<img src="../assets/extension-points.png" alt="K8s Extension Points" width="100%"></p>
-</blockquote>
-<h1 id="in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api"><a class="header" href="#in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api">In this tutorial we will be focusing on extension point 2 (Kubernetes API).</a></h1>
 <pre><code class="language-shell">kind create cluster
 </code></pre>
 <p>let's start by using the <code>custom resource definition</code> api of kubernetes. 
@@ -227,6 +239,19 @@ spec:
                   type: string
                 replicas:
                   type: integer
+      
+      additionalPrinterColumns:
+        - name: Spec
+        type: string
+        description: The cron spec defining the interval a CronJob is run
+        jsonPath: .spec.cronSpec
+        - name: Replicas
+        type: integer
+        description: The number of jobs launched by the CronJob
+        jsonPath: .spec.replicas
+        - name: Age
+        type: date
+        jsonPath: .metadata.creationTimestamp
   # either Namespaced or Cluster
   scope: Namespaced
   names:
@@ -263,6 +288,15 @@ spec:
 EOF
 </code></pre>
 <pre><code class="language-shell">kubectl get crontab
+</code></pre>
+<p>Let's see how our object is being persisted at the etcd database of k8s.</p>
+<pre><code class="language-shell">kubectl exec etcd-kind-control-plane -n kube-system -- sh -c &quot;ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get / --prefix --keys-only&quot; | grep example.com
+
+kubectl exec etcd-kind-control-plane -n kube-system -- sh -c &quot;ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get /registry/apiextensions.k8s.io/customresourcedefinitions/crontabs.stable.example.com --prefix -w json&quot; | jq &quot;.kvs[0].value&quot; | cut -d '&quot;' -f2 | base64 --decode | yq &gt; crd.yml
+
+kubectl exec etcd-kind-control-plane -n kube-system -- sh -c &quot;ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get /registry/apiregistration.k8s.io/apiservices/v1.stable.example.com --prefix -w json&quot; | jq &quot;.kvs[0].value&quot; | cut -d '&quot;' -f2 | base64 --decode | yq &gt; api-registration.yml
+
+kubectl exec etcd-kind-control-plane -n kube-system -- sh -c &quot;ETCDCTL_API=3 etcdctl --cacert /etc/kubernetes/pki/etcd/ca.crt  --key /etc/kubernetes/pki/etcd/server.key --cert  /etc/kubernetes/pki/etcd/server.crt  get /registry/stable.example.com/crontabs/default/my-new-cron-object --prefix -w json&quot; | jq &quot;.kvs[0].value&quot; | cut -d '&quot;' -f2 | base64 --decode | yq &gt; mycron.yml
 </code></pre>
 <p>Delete custom resource </p>
 <pre><code class="language-shell">kubectl delete CronTab my-new-cron-object
