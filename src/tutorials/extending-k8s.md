@@ -15,7 +15,7 @@
 > Extension Points [Details](https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure)
 <img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%">
 
-# In this tutorial we will be focusing on extension point 2 (Kubernetes API).
+## In this tutorial we will be focusing on extension point 2 (Kubernetes API).
 | Declarative APIs | Imperative APIs |
 |-----------------|-----------------|
 | Your API consists of a relatively small number of relatively small objects (resources). | The client says "do this", and then gets a synchronous response back when it is done. |
@@ -150,3 +150,92 @@ Delete custom resource
 ```shell
 kubectl delete CronTab my-new-cron-object
 ```
+
+//TODO: add some text  why we need kubebuilder and what is an operator application and the relationship between a controller and an operator etc.
+let's start by installing kubebuilder
+//TODO: add kubebuilder to the killercoda
+```shell
+# download kubebuilder and install locally.
+curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
+chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
+```
+
+let's scaffold a kubebuilder application
+```shell
+mkdir operator-tutorial
+cd operator-tutorial
+kubebuilder init --repo example.com
+```
+
+let's have a closer look at the make file first.
+make targets are the commands that are used for different development lifecycle steps
+```shell
+make help
+```
+
+to run your kubebuilder application locally
+```shell
+make run
+```
+
+now let's have a look at the `run` target and all the prerequisite comamnds that need to run
+it looks something like this
+```shell
+.PHONY: run
+run: manifests generate fmt vet ## Run a controller from your host.
+	go run ./cmd/main.go
+```
+
+> so the targets that need to run before we can run our applications are 
+> 1. `manifests` and `generate` which both have controller-gen as prerequisite and generate some golang code and yaml manifests 
+> 2. the code is formatted by `fmt` 
+> 3. validated by `vet` 
+> 4. run will run the go application by refering to the application entrypoint at ./cmd/main.go 
+
+## Now we have a working yet empty go application. 
+let's add some meaningful code to it 
+
+Let's imagine we are a working at company where our colleagues are heavy users of the `ghost` blogging application.
+Our job is to provide them with ghost instances whenever and whereever they want it. We are infra gurus and through years of
+experience have learned that building an automation for such a task can save us a lot of toil and manual labor.
+
+Our operator will take care of the following: 
+1. create a new instance of the ghost application as a website in our cluster if our cluster doesn't have it already
+2. update our ghost application when our ghost application custom resource is updated.
+3. delete the ghost application upon request 
+
+Kubebuilder provides a command that allows us to create a custom resource and a process that keeps maintaing (reconciling) that resouce.
+If we choose to create a new resouces (let's call it `Ghost`) kubebuilder will create a blog controller for it automatically.
+If we want to attach our own controllers to the exisiting k8s resources say `Pods` that's posssible too! :D 
+
+```shell
+kubebuilder create api \
+  --kind Ghost \
+  --group blog \
+  --version v1 \
+  --resource true \
+  --controller true
+```
+At this stage, Kubebuilder has wired up two key components for your operator:
+
+A Resource in the form of a Custom Resource Definition (CRD) with the kind `Ghost`.
+A Controller that runs each time a `Ghost` CRD is create, changed, or deleted.
+
+The command we ran added a Golang representation of the `Ghost` Custom Resource Definition (CRD) to our operator scaffolding code.
+To view this code, navigate to your Code editor tab under `api` > `v1` > `ghost_types.go`.
+
+Let's have a look at the `type GhostSpec struct`. 
+This is the code definition of the Kubernetes object spec. This spec contains a field named `foo` which is defined in `api/v1/ghost_types.go:32`. 
+There is even a helpful comment above the field describing the use of foo.
+
+
+now let's see how kubebuilder can generate a yaml file for our `Custom Resource Definition`
+```shell
+make manifests
+```
+you will find the generated crd at `config/crd/bases/blog.example.com_ghosts.yaml`
+see how kubebuilder did all the heavylifting we had to previously do for the crontab example! lovely!
+
+
+## Now let's install the CRD into our cluster
+let's notice the difference by looking at our kubernetes 
