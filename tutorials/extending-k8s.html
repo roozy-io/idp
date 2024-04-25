@@ -188,7 +188,7 @@
 <p>Extension Points <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
 <img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%"></p>
 </blockquote>
-<h1 id="in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api"><a class="header" href="#in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api">In this tutorial we will be focusing on extension point 2 (Kubernetes API).</a></h1>
+<h2 id="in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api"><a class="header" href="#in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api">In this tutorial we will be focusing on extension point 2 (Kubernetes API).</a></h2>
 <table><thead><tr><th>Declarative APIs</th><th>Imperative APIs</th></tr></thead><tbody>
 <tr><td>Your API consists of a relatively small number of relatively small objects (resources).</td><td>The client says &quot;do this&quot;, and then gets a synchronous response back when it is done.</td></tr>
 <tr><td>The objects define configuration of applications or infrastructure.</td><td>The client says &quot;do this&quot;, and then gets an operation ID back, and has to check a separate Operation object to determine completion of the request.</td></tr>
@@ -301,6 +301,76 @@ kubectl exec etcd-kind-control-plane -n kube-system -- sh -c &quot;ETCDCTL_API=3
 <p>Delete custom resource </p>
 <pre><code class="language-shell">kubectl delete CronTab my-new-cron-object
 </code></pre>
+<p>//TODO: add some text  why we need kubebuilder and what is an operator application and the relationship between a controller and an operator etc.
+let's start by installing kubebuilder
+//TODO: add kubebuilder to the killercoda</p>
+<pre><code class="language-shell"># download kubebuilder and install locally.
+curl -L -o kubebuilder &quot;https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)&quot;
+chmod +x kubebuilder &amp;&amp; mv kubebuilder /usr/local/bin/
+</code></pre>
+<p>let's scaffold a kubebuilder application</p>
+<pre><code class="language-shell">mkdir operator-tutorial
+cd operator-tutorial
+kubebuilder init --repo example.com
+</code></pre>
+<p>let's have a closer look at the make file first.
+make targets are the commands that are used for different development lifecycle steps</p>
+<pre><code class="language-shell">make help
+</code></pre>
+<p>to run your kubebuilder application locally</p>
+<pre><code class="language-shell">make run
+</code></pre>
+<p>now let's have a look at the <code>run</code> target and all the prerequisite comamnds that need to run
+it looks something like this</p>
+<pre><code class="language-shell">.PHONY: run
+run: manifests generate fmt vet ## Run a controller from your host.
+	go run ./cmd/main.go
+</code></pre>
+<blockquote>
+<p>so the targets that need to run before we can run our applications are </p>
+<ol>
+<li><code>manifests</code> and <code>generate</code> which both have controller-gen as prerequisite and generate some golang code and yaml manifests </li>
+<li>the code is formatted by <code>fmt</code> </li>
+<li>validated by <code>vet</code> </li>
+<li>run will run the go application by refering to the application entrypoint at ./cmd/main.go </li>
+</ol>
+</blockquote>
+<h2 id="now-we-have-a-working-yet-empty-go-application"><a class="header" href="#now-we-have-a-working-yet-empty-go-application">Now we have a working yet empty go application.</a></h2>
+<p>let's add some meaningful code to it </p>
+<p>Let's imagine we are a working at company where our colleagues are heavy users of the <code>ghost</code> blogging application.
+Our job is to provide them with ghost instances whenever and whereever they want it. We are infra gurus and through years of
+experience have learned that building an automation for such a task can save us a lot of toil and manual labor.</p>
+<p>Our operator will take care of the following: </p>
+<ol>
+<li>create a new instance of the ghost application as a website in our cluster if our cluster doesn't have it already</li>
+<li>update our ghost application when our ghost application custom resource is updated.</li>
+<li>delete the ghost application upon request </li>
+</ol>
+<p>Kubebuilder provides a command that allows us to create a custom resource and a process that keeps maintaing (reconciling) that resouce.
+If we choose to create a new resouces (let's call it <code>Ghost</code>) kubebuilder will create a blog controller for it automatically.
+If we want to attach our own controllers to the exisiting k8s resources say <code>Pods</code> that's posssible too! :D </p>
+<pre><code class="language-shell">kubebuilder create api \
+  --kind Ghost \
+  --group blog \
+  --version v1 \
+  --resource true \
+  --controller true
+</code></pre>
+<p>At this stage, Kubebuilder has wired up two key components for your operator:</p>
+<p>A Resource in the form of a Custom Resource Definition (CRD) with the kind <code>Ghost</code>.
+A Controller that runs each time a <code>Ghost</code> CRD is create, changed, or deleted.</p>
+<p>The command we ran added a Golang representation of the <code>Ghost</code> Custom Resource Definition (CRD) to our operator scaffolding code.
+To view this code, navigate to your Code editor tab under <code>api</code> &gt; <code>v1</code> &gt; <code>ghost_types.go</code>.</p>
+<p>Let's have a look at the <code>type GhostSpec struct</code>. 
+This is the code definition of the Kubernetes object spec. This spec contains a field named <code>foo</code> which is defined in <code>api/v1/ghost_types.go:32</code>. 
+There is even a helpful comment above the field describing the use of foo.</p>
+<p>now let's see how kubebuilder can generate a yaml file for our <code>Custom Resource Definition</code></p>
+<pre><code class="language-shell">make manifests
+</code></pre>
+<p>you will find the generated crd at <code>config/crd/bases/blog.example.com_ghosts.yaml</code>
+see how kubebuilder did all the heavylifting we had to previously do for the crontab example! lovely!</p>
+<h2 id="now-lets-install-the-crd-into-our-cluster"><a class="header" href="#now-lets-install-the-crd-into-our-cluster">Now let's install the CRD into our cluster</a></h2>
+<p>let's notice the difference by looking at our kubernetes </p>
 
                     </main>
 
