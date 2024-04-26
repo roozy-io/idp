@@ -3650,7 +3650,71 @@ There is even a helpful comment above the field describing the use of foo.</p>
 <p>you will find the generated crd at <code>config/crd/bases/blog.example.com_ghosts.yaml</code>
 see how kubebuilder did all the heavylifting we had to previously do for the crontab example! lovely!</p>
 <h2 id="now-lets-install-the-crd-into-our-cluster"><a class="header" href="#now-lets-install-the-crd-into-our-cluster">Now let's install the CRD into our cluster</a></h2>
-<p>let's notice the difference by looking at our kubernetes </p>
+<p>let's notice the difference by looking at our kubernetes crds</p>
+<pre><code class="language-shell">kubectl get crds
+</code></pre>
+<p>now let's install the crd we generated onto the cluster</p>
+<pre><code class="language-shell">make install
+</code></pre>
+<p>and run the get the crds again</p>
+<pre><code class="language-shell">kubectl get crds
+</code></pre>
+<p>When you selected to create a operator along with the <code>Ghost</code> Resource, Kubebuilder took care of some key setup:</p>
+<ol>
+<li>Starts the operator process during application boot</li>
+<li>Implements a custom Reconcile function to run on each <code>Ghost</code> resource event</li>
+<li>Configures the operator to know which resource events to listen to</li>
+</ol>
+<p>To see the start process, navigate to <code>cmd/main.go:125</code>. You will see a section that starts the ghost operator:</p>
+<pre><code class="language-shell">if err = (&amp;controllers.WebsiteReconciler{
+  Client: mgr.GetClient(),
+  Scheme: mgr.GetScheme(),
+}).SetupWithManager(mgr); err != nil {
+  setupLog.Error(err, &quot;unable to create controller&quot;, &quot;controller&quot;, &quot;Website&quot;)
+  os.Exit(1)
+}
+</code></pre>
+<p>This is a call to the function <code>SetupWithManager(mgr)</code> defined in the file <code>internal/controller/ghost_controller.go</code>.</p>
+<p>Navigate to <code>internal/controller/ghost_controller.go:58</code> to view this function. 
+It is already configured to know about the CRD <code>api/v1/ghost_types.go</code> or the generated yaml represenation at <code>crd/bases/blog.example.com_ghosts</code>.</p>
+<p>The most important function inside the controller is the <code>Reconcile</code> function <code>internal/controller/ghost_controller.go:49</code>.  Reconcile is part of the main kubernetes reconciliation loop which aims to move the current state of the cluster closer to the desired state. It is triggered anytime we change the cluster state related to our custom resource <code>internal/controller/ghost_controller.go:49</code>.</p>
+<p>let's add some logs to the reconcile function and run the operator application and change the state of the cluster.
+let's paste this code into the <code>Reconcile</code> function. </p>
+<pre><code class="language-shell">  log := log.FromContext(ctx)
+	log.Info(&quot;Reconciling Ghost&quot;)
+	log.Info(&quot;Reconciliation complete&quot;)
+	return ctrl.Result{}, nil
+</code></pre>
+<p>and run the application</p>
+<pre><code class="language-shell">make run
+</code></pre>
+<p>next we need to modify the generated custom resource yaml file
+navigate to <code>config/samples/blog_v1_ghost.yaml</code>
+and add a <code>foo: bar</code> under spec. The custom resource should look like </p>
+<pre><code class="language-shell">apiVersion: blog.example.com/v1
+kind: Ghost
+metadata:
+  labels:
+    app.kubernetes.io/name: ghost
+    app.kubernetes.io/instance: ghost-sample
+    app.kubernetes.io/part-of: operator-tutorial
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operator-tutorial
+  name: ghost-sample
+spec:
+  foo: bar
+</code></pre>
+<p>don't forget to save the file. Now in other terminal window, let's apply it on the cluster.</p>
+<pre><code class="language-shell">kubectl apply -f config/samples/blog_v1_ghost.yaml
+</code></pre>
+<p>Tada! checkout the logs showing up!</p>
+<pre><code class="language-shell">INFO    Reconciling Ghost
+INFO    Reconciliation complete
+</code></pre>
+<p>now let's try deleting the resource. </p>
+<pre><code class="language-shell">kubectl delete -f config/samples/blog_v1_ghost.yaml
+</code></pre>
+<p>Same logs showed up again. So basically <em>anytime</em> you interact with your Ghost resource a new event is triggered and your controller will print the logs. </p>
 <h1 id="serverless"><a class="header" href="#serverless">Serverless</a></h1>
 <h1 id="100days-resources-25"><a class="header" href="#100days-resources-25">100Days Resources</a></h1>
 <ul>
