@@ -238,4 +238,96 @@ see how kubebuilder did all the heavylifting we had to previously do for the cro
 
 
 ## Now let's install the CRD into our cluster
-let's notice the difference by looking at our kubernetes 
+let's notice the difference by looking at our kubernetes crds
+
+```shell
+kubectl get crds
+```
+
+now let's install the crd we generated onto the cluster
+```shell
+make install
+```
+and run the get the crds again
+
+```shell
+kubectl get crds
+```
+
+When you selected to create a operator along with the `Ghost` Resource, Kubebuilder took care of some key setup:
+
+1. Starts the operator process during application boot
+2. Implements a custom Reconcile function to run on each `Ghost` resource event
+3. Configures the operator to know which resource events to listen to
+
+To see the start process, navigate to `cmd/main.go:125`. You will see a section that starts the ghost operator:
+```shell
+if err = (&controllers.WebsiteReconciler{
+  Client: mgr.GetClient(),
+  Scheme: mgr.GetScheme(),
+}).SetupWithManager(mgr); err != nil {
+  setupLog.Error(err, "unable to create controller", "controller", "Website")
+  os.Exit(1)
+}
+```
+
+This is a call to the function `SetupWithManager(mgr)` defined in the file `internal/controller/ghost_controller.go`.
+
+Navigate to `internal/controller/ghost_controller.go:58` to view this function. 
+It is already configured to know about the CRD `api/v1/ghost_types.go` or the generated yaml represenation at `crd/bases/blog.example.com_ghosts`.
+
+The most important function inside the controller is the `Reconcile` function `internal/controller/ghost_controller.go:49`.  Reconcile is part of the main kubernetes reconciliation loop which aims to move the current state of the cluster closer to the desired state. It is triggered anytime we change the cluster state related to our custom resource `internal/controller/ghost_controller.go:49`.
+
+let's add some logs to the reconcile function and run the operator application and change the state of the cluster.
+let's paste this code into the `Reconcile` function. 
+
+```shell
+  log := log.FromContext(ctx)
+	log.Info("Reconciling Ghost")
+	log.Info("Reconciliation complete")
+	return ctrl.Result{}, nil
+```
+
+and run the application
+
+```shell
+make run
+```
+
+next we need to modify the generated custom resource yaml file
+navigate to `config/samples/blog_v1_ghost.yaml`
+and add a `foo: bar` under spec. The custom resource should look like 
+```shell
+apiVersion: blog.example.com/v1
+kind: Ghost
+metadata:
+  labels:
+    app.kubernetes.io/name: ghost
+    app.kubernetes.io/instance: ghost-sample
+    app.kubernetes.io/part-of: operator-tutorial
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operator-tutorial
+  name: ghost-sample
+spec:
+  foo: bar
+```
+
+don't forget to save the file. Now in other terminal window, let's apply it on the cluster.
+```shell
+kubectl apply -f config/samples/blog_v1_ghost.yaml
+```
+
+Tada! checkout the logs showing up!
+
+```shell
+INFO    Reconciling Ghost
+INFO    Reconciliation complete
+```
+
+now let's try deleting the resource. 
+
+```shell
+kubectl delete -f config/samples/blog_v1_ghost.yaml
+```
+
+Same logs showed up again. So basically _anytime_ you interact with your Ghost resource a new event is triggered and your controller will print the logs. 
