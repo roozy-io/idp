@@ -3659,6 +3659,7 @@ see how kubebuilder did all the heavylifting we had to previously do for the cro
 <p>and run the get the crds again</p>
 <pre><code class="language-shell">kubectl get crds
 </code></pre>
+<h2 id="a-look-into-kubebuilder-setup"><a class="header" href="#a-look-into-kubebuilder-setup">A look into kubebuilder setup</a></h2>
 <p>When you selected to create a operator along with the <code>Ghost</code> Resource, Kubebuilder took care of some key setup:</p>
 <ol>
 <li>Starts the operator process during application boot</li>
@@ -3678,6 +3679,7 @@ see how kubebuilder did all the heavylifting we had to previously do for the cro
 <p>Navigate to <code>internal/controller/ghost_controller.go:58</code> to view this function. 
 It is already configured to know about the CRD <code>api/v1/ghost_types.go</code> or the generated yaml represenation at <code>crd/bases/blog.example.com_ghosts</code>.</p>
 <p>The most important function inside the controller is the <code>Reconcile</code> function <code>internal/controller/ghost_controller.go:49</code>.  Reconcile is part of the main kubernetes reconciliation loop which aims to move the current state of the cluster closer to the desired state. It is triggered anytime we change the cluster state related to our custom resource <code>internal/controller/ghost_controller.go:49</code>.</p>
+<h2 id="add-some-logging-to-the-reconcile-function"><a class="header" href="#add-some-logging-to-the-reconcile-function">add some logging to the reconcile function</a></h2>
 <p>let's add some logs to the reconcile function and run the operator application and change the state of the cluster.
 let's paste this code into the <code>Reconcile</code> function. </p>
 <pre><code class="language-shell">  log := log.FromContext(ctx)
@@ -3714,7 +3716,154 @@ INFO    Reconciliation complete
 <p>now let's try deleting the resource. </p>
 <pre><code class="language-shell">kubectl delete -f config/samples/blog_v1_ghost.yaml
 </code></pre>
-<p>Same logs showed up again. So basically <em>anytime</em> you interact with your Ghost resource a new event is triggered and your controller will print the logs. </p>
+<p>Same logs showed up again. So basically <em>anytime</em> you interact with your <code>Ghost</code> resource a new event is triggered and your controller will print the logs. </p>
+<h2 id="implementing-the-desire-state-of-the-ghost-operator"><a class="header" href="#implementing-the-desire-state-of-the-ghost-operator">implementing the desire state of the ghost operator</a></h2>
+<p>Ok, now let's replace the default GhostSpec with a meaningful declartion of our desired state. Meaning we want our custom resource reflect the desired state for our Ghost application.</p>
+<p>replace GhostSpec <code>api/v1/ghost_types.go:27</code> with the following snippet</p>
+<pre><code class="language-shell">type GhostSpec struct {
+	Team string `json:&quot;team,omitempty&quot;`
+	//+kubebuilder:validation:Pattern=`^[-a-z0-9]*$`
+	ImageTag string `json:&quot;imageTag&quot;`
+}
+</code></pre>
+<p>This code has three key parts:</p>
+<p>//+kubebuilder is a comment prefix that will trigger kubebuilder generation changes. In this case, it will set a validation of the <code>ImageTag</code> value to only allow dashes, lowercase letters, or digits.
+The <code>ImageTag</code> is the Golang variable used throughout the codebase. Golang uses capitalized public variable names by convention.
+<code>json:&quot;imageTag&quot;</code> defines a &quot;tag&quot; that Kubebuilder uses to generate the YAML field. Yaml parameters starts with lower case variable names by convention.
+If <code>omitempty</code> is used in a json tag, that field will be marked as <code>optional</code>, otherwise as <code>mandatory</code>.</p>
+<p>Before we generete the new crd and install them on the cluster let's do the following, let's have a look at the existing crd</p>
+<pre><code class="language-shell">kubectl get crd ghosts.blog.example.com --output jsonpath=&quot;{.spec.versions[0].schema['openAPIV3Schema'].properties.spec.properties}{\&quot;\n\&quot;}&quot; | jq
+</code></pre>
+<p>the output should be like </p>
+<pre><code class="language-shell">{
+  &quot;foo&quot;: {
+    &quot;description&quot;: &quot;Foo is an example field of Ghost. Edit ghost_types.go to remove/update&quot;,
+    &quot;type&quot;: &quot;string&quot;
+  }
+}
+</code></pre>
+<p>now, let us install the new crd</p>
+<pre><code class="language-shell">make install
+</code></pre>
+<p>and see the changes</p>
+<pre><code class="language-shell">kubectl get crd ghosts.blog.example.com --output jsonpath=&quot;{.spec.versions[0].schema['openAPIV3Schema'].properties.spec.properties}{\&quot;\n\&quot;}&quot; | jq
+</code></pre>
+<p>the output should be </p>
+<pre><code class="language-shell">{
+  &quot;imageTag&quot;: {
+    &quot;pattern&quot;: &quot;^[-a-z0-9]*$&quot;,
+    &quot;type&quot;: &quot;string&quot;
+  },
+  &quot;team&quot;: {
+    &quot;type&quot;: &quot;string&quot;
+  }
+}
+</code></pre>
+<h2 id="accessing-the-our-custom-resource-inside-the-reconcile-function"><a class="header" href="#accessing-the-our-custom-resource-inside-the-reconcile-function">accessing the our custom resource inside the reconcile function</a></h2>
+<p>now let's try to access our custom resource in the <code>reconcile</code> function. 
+first off, let us reflect our new fields in our cutom resource.
+let us replace <code>config/samples/blog_v1_ghost.yaml</code> with the following</p>
+<pre><code class="language-shell">apiVersion: blog.example.com/v1
+kind: Ghost
+metadata:
+  labels:
+    app.kubernetes.io/name: ghost
+    app.kubernetes.io/instance: ghost-sample
+    app.kubernetes.io/part-of: operator-tutorial
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operator-tutorial
+  name: ghost-sample
+spec:
+  imageTag: latest
+  team: marketing
+</code></pre>
+<p>next, let us replace the <code>reconcile</code> code with the following snippet: </p>
+<pre><code class="language-shell">log := log.FromContext(ctx)
+ghost := &amp;blogv1.Ghost{}
+if err := r.Get(ctx, req.NamespacedName, ghost); err != nil {
+  log.Error(err, &quot;Failed to get Ghost&quot;)
+  return ctrl.Result{}, client.IgnoreNotFound(err)
+}
+
+log.Info(&quot;Reconciling Ghost&quot;, &quot;imageTag&quot;, ghost.Spec.ImageTag, &quot;team&quot;, ghost.Spec.Team)
+log.Info(&quot;Reconciliation complete&quot;)
+return ctrl.Result{}, nil
+</code></pre>
+<p>let us anlyze the above snippet line by line. 
+line 1 assings a logger instance to the variable <code>log</code> variable.
+line 2 creates an instance of our <code>Ghost</code> data structure.
+line 3 tries to read a ghost instance from the reconciler client. Please note that the r which is a reference to the <code>GhostReconciler</code> has a k8s client interface and that interface which implements the <code>Get</code> method which is an equivalent golang implementation of the <code>kubectl get</code>. on succesful <code>Get</code> the resouce will be written to our <code>ghost</code> variable. in case of error, client logs the error. if the error is of type (not found) the controller won't return an error. error not found will happen if we run <code>kubectl delete -f config/samples/blog_v1_ghost.yaml</code></p>
+<p>now we can start our application again:</p>
+<pre><code class="language-shell">make run
+</code></pre>
+<p>so far our reconcile function is not run yet but if we apply our custom resource in another terminal window:</p>
+<pre><code class="language-shell">kubectl apply -f config/crd/samples/blog_v1_ghost.yaml
+</code></pre>
+<p>we start to see the logs of our reconcile function</p>
+<pre><code class="language-shell">INFO    Reconciling Ghost       {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;default&quot;}, &quot;namespace&quot;: &quot;default&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;, &quot;imageTag&quot;: &quot;latest&quot;, &quot;team&quot;: &quot;marketing&quot;}
+2024-04-29T15:54:05+02:00       
+
+INFO    Reconciliation complete {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;default&quot;}, &quot;namespace&quot;: &quot;default&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;}
+</code></pre>
+<p>cool! next stop, we will implement the actual controller logic for our ghost operator.</p>
+<h2 id="implementing-the-ghost-operator-logic"><a class="header" href="#implementing-the-ghost-operator-logic">implementing the ghost operator logic</a></h2>
+<p>Before we start coding the ghost operator, we need to know what resources we need in order to deploy ghost to our cluster. let's consult the docker hub page for ghost. https://hub.docker.com/_/ghost</p>
+<p>As we would like to persist ghost data to a persistent volume, we can try to convert this docker command to a k8s deployment. </p>
+<pre><code class="language-shell">docker run -d \
+	--name some-ghost \
+	-e NODE_ENV=development \
+	-e database__connection__filename='/var/lib/ghost/content/data/ghost.db' \
+	-p 3001:2368 \
+	-v some-ghost-data:/var/lib/ghost/content \
+	ghost:alpine
+</code></pre>
+<p>The deployment would look something like </p>
+<pre><code class="language-shell">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghost-deployment
+spec:
+  replicas: 1 # You can adjust the number of replicas as needed
+  selector:
+    matchLabels:
+      app: ghost
+  template:
+    metadata:
+      labels:
+        app: ghost
+    spec:
+      containers:
+      - name: ghost
+        image: ghost:alpine
+        env:
+        - name: NODE_ENV
+          value: development
+        - name: database__connection__filename
+          value: /var/lib/ghost/content/data/ghost.db
+        ports:
+        - containerPort: 2368
+        volumeMounts:
+        - name: ghost-data
+          mountPath: /var/lib/ghost/content
+      volumes:
+      - name: ghost-data
+        persistentVolumeClaim:
+          claimName: ghost-data-pvc # Define your PVC or use an existing one
+</code></pre>
+<p>As you can see this deployment expects an existing persistent volume claim called <code>ghost-data-pvc</code></p>
+<p>We can define it with this yaml:</p>
+<pre><code class="language-shell">apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ghost-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+</code></pre>
+<p>Let us try to code the pvc provisiong into our controller.</p>
 <h1 id="serverless"><a class="header" href="#serverless">Serverless</a></h1>
 <h1 id="100days-resources-25"><a class="header" href="#100days-resources-25">100Days Resources</a></h1>
 <ul>
