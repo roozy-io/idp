@@ -824,4 +824,3 @@ main.go file of our application which is at `cmd/main.go`.
 ```
 ## Using our function in the reconcile loop.
 Next we need to call our function in our reconcile function.
-
