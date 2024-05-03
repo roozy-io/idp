@@ -584,6 +584,29 @@ spec:
       storage: 1Gi
 </code></pre>
 <p>Let us try to code the pvc provisiong into our controller.</p>
+<h2 id="add-a-step-how-to-add-the-launchjson-debugger-to-the-vscode-config"><a class="header" href="#add-a-step-how-to-add-the-launchjson-debugger-to-the-vscode-config">Add a step how to add the launch.json debugger to the vscode config</a></h2>
+<p>Being able to run our operator application in debug mode is definitely a nice thing. 
+Fortutanly we can simply do this on vscode. Let's click on the <code>create a launch.json file</code> in the <code>Run and Debug</code> debug.
+<img src="../assets/launchjson.png" alt="vscode run and debug" width="70%"></p>
+<p>Next we select <code>Go</code> and <code>Go Launch Package</code>. In the generated json file we need to adjust the program argument and set it to the 
+main.go file of our application which is at <code>cmd/main.go</code>.</p>
+<pre><code class="language-shell">{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+        {
+            &quot;name&quot;: &quot;Launch Package&quot;,
+            &quot;type&quot;: &quot;go&quot;,
+            &quot;request&quot;: &quot;launch&quot;,
+            &quot;mode&quot;: &quot;auto&quot;,
+            &quot;program&quot;: &quot;${fileDirname}/cmd/main.go&quot;
+        }
+    ]
+}
+</code></pre>
+<h2 id=""><a class="header" href="#"></a></h2>
 
                     </main>
 
