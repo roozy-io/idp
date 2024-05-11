@@ -3696,12 +3696,6 @@ and add a <code>foo: bar</code> under spec. The custom resource should look like
 <pre><code class="language-yaml">apiVersion: blog.example.com/v1
 kind: Ghost
 metadata:
-  labels:
-    app.kubernetes.io/name: ghost
-    app.kubernetes.io/instance: ghost-sample
-    app.kubernetes.io/part-of: operator-tutorial
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: operator-tutorial
   name: ghost-sample
 spec:
   foo: bar
@@ -3721,7 +3715,6 @@ INFO    Reconciliation complete
 <p>Ok, now let's replace the default GhostSpec with a meaningful declartion of our desired state. Meaning we want our custom resource reflect the desired state for our Ghost application.</p>
 <p>replace GhostSpec <code>api/v1/ghost_types.go:27</code> with the following snippet</p>
 <pre><code class="language-go">type GhostSpec struct {
-	Team string `json:&quot;team,omitempty&quot;`
 	//+kubebuilder:validation:Pattern=`^[-a-z0-9]*$`
 	ImageTag string `json:&quot;imageTag&quot;`
 }
@@ -3753,9 +3746,6 @@ If <code>omitempty</code> is used in a json tag, that field will be marked as <c
   &quot;imageTag&quot;: {
     &quot;pattern&quot;: &quot;^[-a-z0-9]*$&quot;,
     &quot;type&quot;: &quot;string&quot;
-  },
-  &quot;team&quot;: {
-    &quot;type&quot;: &quot;string&quot;
   }
 }
 </code></pre>
@@ -3766,16 +3756,13 @@ let us replace <code>config/samples/blog_v1_ghost.yaml</code> with the following
 <pre><code class="language-yaml">apiVersion: blog.example.com/v1
 kind: Ghost
 metadata:
-  labels:
-    app.kubernetes.io/name: ghost
-    app.kubernetes.io/instance: ghost-sample
-    app.kubernetes.io/part-of: operator-tutorial
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: operator-tutorial
   name: ghost-sample
+  namespace: marketing
 spec:
   imageTag: latest
-  team: marketing
+</code></pre>
+<pre><code class="language-shell">kubectl create namespace marketing
+kubectl apply -f config/samples/blog_v1_ghost.yaml
 </code></pre>
 <p>next, let us replace the <code>reconcile</code> code with the following snippet: </p>
 <pre><code class="language-go">log := log.FromContext(ctx)
@@ -3785,7 +3772,7 @@ if err := r.Get(ctx, req.NamespacedName, ghost); err != nil {
   return ctrl.Result{}, client.IgnoreNotFound(err)
 }
 
-log.Info(&quot;Reconciling Ghost&quot;, &quot;imageTag&quot;, ghost.Spec.ImageTag, &quot;team&quot;, ghost.Spec.Team)
+log.Info(&quot;Reconciling Ghost&quot;, &quot;imageTag&quot;, ghost.Spec.ImageTag, &quot;team&quot;, ghost.ObjectMeta.Namespace)
 log.Info(&quot;Reconciliation complete&quot;)
 return ctrl.Result{}, nil
 </code></pre>
@@ -3800,10 +3787,10 @@ line 3 tries to read a ghost instance from the reconciler client. Please note th
 <pre><code class="language-shell">kubectl apply -f config/crd/samples/blog_v1_ghost.yaml
 </code></pre>
 <p>we start to see the logs of our reconcile function</p>
-<pre><code class="language-shell">INFO    Reconciling Ghost       {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;default&quot;}, &quot;namespace&quot;: &quot;default&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;, &quot;imageTag&quot;: &quot;latest&quot;, &quot;team&quot;: &quot;marketing&quot;}
+<pre><code class="language-shell">INFO    Reconciling Ghost       {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;marketing&quot;}, &quot;namespace&quot;: &quot;marketing&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;, &quot;imageTag&quot;: &quot;latest&quot;, &quot;team&quot;: &quot;marketing&quot;}
 2024-04-29T15:54:05+02:00       
 
-INFO    Reconciliation complete {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;default&quot;}, &quot;namespace&quot;: &quot;default&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;}
+INFO    Reconciliation complete {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;marketing&quot;}, &quot;namespace&quot;: &quot;marketing&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;}
 </code></pre>
 <p>cool! next stop, we will implement the actual controller logic for our ghost operator.</p>
 <h2 id="implementing-the-ghost-operator-logic"><a class="header" href="#implementing-the-ghost-operator-logic">implementing the ghost operator logic</a></h2>
@@ -3864,51 +3851,16 @@ spec:
       storage: 1Gi
 </code></pre>
 <p>In our operator, each team's ghost instance will be deployed to the team's corresponding namespace.
-The operator needs to make sure that the namespace exists first and create if it doesn't.
-The following function implements this logic. Let's add it to our <code>ghost_controller</code>. Please make sure that 
-<code>corev1</code> and <code>metava1</code> imports are there in the import section.</p>
-<pre><code class="language-go">corev1 &quot;k8s.io/api/core/v1&quot;
-metav1 &quot;k8s.io/apimachinery/pkg/apis/meta/v1&quot;
-</code></pre>
-<pre><code class="language-go">func (r *GhostReconciler) addNamespaceIfNotExists(ctx context.Context, ghost *blogv1.Ghost) error {
-	// Check if the namespace exists
-	log := log.FromContext(ctx)
-	namespaceName := ghost.Spec.Team
-	namespace := &amp;corev1.Namespace{}
-	err := r.Get(ctx, client.ObjectKey{Name: namespaceName}, namespace)
-	if err == nil {
-		// Namespace exists
-		return nil
-	}
-
-	// Namespace doesn't exist, create it
-	namespace = &amp;corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: namespaceName,
-		},
-	}
-	if err := r.Create(ctx, namespace); err != nil {
-		return err
-	}
-	// Namespace created successfully
-	log.Info(&quot;Namespace created&quot;, &quot;namespace&quot;, namespaceName)
-	return nil
-}
-</code></pre>
-<p>Let us try to code the pvc provisiong into our controller. For that we need to copy the following snippet to our controller.
+Let us try to code the pvc provisiong into our controller. For that we need to copy the following snippet to our controller.
 <code>internal/controller/ghost_controller.go</code> </p>
 <pre><code class="language-go">func (r *GhostReconciler) addPvcIfNotExists(ctx context.Context, ghost *blogv1.Ghost) error {
 	log := log.FromContext(ctx)
-	// Add or update the namespace first
-	if err := r.addNamespaceIfNotExists(ctx, ghost); err != nil {
-		return err
-	}
 
 	pvc := &amp;corev1.PersistentVolumeClaim{}
-	team := ghost.Spec.Team
+	team := ghost.ObjectMeta.Namespace
 	pvcName := pvcNamePrefix + team
 
-	err := r.Get(ctx, client.ObjectKey{Namespace: ghost.Spec.Team, Name: pvcName}, pvc)
+	err := r.Get(ctx, client.ObjectKey{Namespace: ghost.ObjectMeta.Namespace, Name: pvcName}, pvc)
 
 	if err == nil {
 		// PVC exists, we are done here!
@@ -3917,10 +3869,14 @@ metav1 &quot;k8s.io/apimachinery/pkg/apis/meta/v1&quot;
 
 	// PVC does not exist, create it
 	desiredPVC := generateDesiredPVC(ghost, pvcName)
+	if err := controllerutil.SetControllerReference(ghost, desiredPVC, r.Scheme); err != nil {
+		return err
+	}
 
 	if err := r.Create(ctx, desiredPVC); err != nil {
 		return err
 	}
+	r.recoder.Event(ghost, corev1.EventTypeNormal, &quot;PVCReady&quot;, &quot;PVC created successfully&quot;)
 	log.Info(&quot;PVC created&quot;, &quot;pvc&quot;, pvcName)
 	return nil
 }
@@ -3929,7 +3885,7 @@ func generateDesiredPVC(ghost *blogv1.Ghost, pvcName string) *corev1.PersistentV
 	return &amp;corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pvcName,
-			Namespace: ghost.Spec.Team,
+			Namespace: ghost.ObjectMeta.Namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -3948,18 +3904,16 @@ const deploymentNamePrefix = &quot;ghost-deployment-&quot;
 const svcNamePrefix = &quot;ghost-service-&quot;
 </code></pre>
 <p>right after our <code>GhostReconciler</code> struct. (around line 40).
-The <code>addPvcIfNotExists</code> function, first calls the <code>addNamespaceIfNotExists</code> function to make sure the namespace is there.
-Then checks if the <code>pvc</code> is already created and if not, it will create it in the <code>Team</code>'s namespace.</p>
+The <code>addPvcIfNotExists</code> function, checks whether the <code>pvc</code> is already created and if not, it will create it in the right namespace.</p>
 <p>Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
-The logic is very similar to the previous snippet. However there is one key difference and that is that <code>addOrUpdateDeployment</code> can also update a deployment 
-in case the deployed <code>imageTag</code> for the ghost image is different from the one coming from the <code>ghost.Spec</code> aka. desired state.</p>
+The logic is very similar to the previous snippet. However there is one key difference and that is that <code>addOrUpdateDeployment</code> can also update a deployment in case the deployed <code>imageTag</code> for the ghost image is different from the one coming from the <code>ghost.Spec</code> aka. desired state.</p>
 <pre><code class="language-go">func (r *GhostReconciler) addOrUpdateDeployment(ctx context.Context, ghost *blogv1.Ghost) error {
 	log := log.FromContext(ctx)
 	deploymentList := &amp;appsv1.DeploymentList{}
-	labelSelector := labels.Set{&quot;app&quot;: &quot;ghost-&quot; + ghost.Spec.Team}
+	labelSelector := labels.Set{&quot;app&quot;: &quot;ghost-&quot; + ghost.ObjectMeta.Namespace}
 
 	err := r.List(ctx, deploymentList, &amp;client.ListOptions{
-		Namespace:     ghost.Spec.Team,
+		Namespace:     ghost.ObjectMeta.Namespace,
 		LabelSelector: labelSelector.AsSelector(),
 	})
 	if err != nil {
@@ -3979,6 +3933,7 @@ in case the deployed <code>imageTag</code> for the ghost image is different from
 				return err
 			}
 			log.Info(&quot;Deployment updated&quot;, &quot;deployment&quot;, existingDeployment.Name)
+			r.recoder.Event(ghost, corev1.EventTypeNormal, &quot;DeploymentUpdated&quot;, &quot;Deployment updated successfully&quot;)
 		} else {
 			log.Info(&quot;Deployment is up to date, no action required&quot;, &quot;deployment&quot;, existingDeployment.Name)
 		}
@@ -3987,10 +3942,14 @@ in case the deployed <code>imageTag</code> for the ghost image is different from
 
 	// Deployment does not exist, create it
 	desiredDeployment := generateDesiredDeployment(ghost)
+	if err := controllerutil.SetControllerReference(ghost, desiredDeployment, r.Scheme); err != nil {
+		return err
+	}
 	if err := r.Create(ctx, desiredDeployment); err != nil {
 		return err
 	}
-	log.Info(&quot;Deployment created&quot;, &quot;team&quot;, ghost.Spec.Team)
+	r.recoder.Event(ghost, corev1.EventTypeNormal, &quot;DeploymentCreated&quot;, &quot;Deployment created successfully&quot;)
+	log.Info(&quot;Deployment created&quot;, &quot;team&quot;, ghost.ObjectMeta.Namespace)
 	return nil
 }
 
@@ -3999,22 +3958,22 @@ func generateDesiredDeployment(ghost *blogv1.Ghost) *appsv1.Deployment {
 	return &amp;appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: deploymentNamePrefix,
-			Namespace:    ghost.Spec.Team,
+			Namespace:    ghost.ObjectMeta.Namespace,
 			Labels: map[string]string{
-				&quot;app&quot;: &quot;ghost-&quot; + ghost.Spec.Team,
+				&quot;app&quot;: &quot;ghost-&quot; + ghost.ObjectMeta.Namespace,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &amp;replicas,
 			Selector: &amp;metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					&quot;app&quot;: &quot;ghost-&quot; + ghost.Spec.Team,
+					&quot;app&quot;: &quot;ghost-&quot; + ghost.ObjectMeta.Namespace,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						&quot;app&quot;: &quot;ghost-&quot; + ghost.Spec.Team,
+						&quot;app&quot;: &quot;ghost-&quot; + ghost.ObjectMeta.Namespace,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4050,7 +4009,7 @@ func generateDesiredDeployment(ghost *blogv1.Ghost) *appsv1.Deployment {
 							Name: &quot;ghost-data&quot;,
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &amp;corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: &quot;ghost-data-pvc-&quot; + ghost.Spec.Team,
+									ClaimName: &quot;ghost-data-pvc-&quot; + ghost.ObjectMeta.Namespace,
 								},
 							},
 						},
@@ -4061,8 +4020,7 @@ func generateDesiredDeployment(ghost *blogv1.Ghost) *appsv1.Deployment {
 	}
 }
 </code></pre>
-<p>Let's make sure 
-<code>apps/v1</code> import statement is added to the import section.</p>
+<p>Let's make sure <code>apps/v1</code> import statement is added to the import section.</p>
 <pre><code class="language-go">appsv1 &quot;k8s.io/api/apps/v1&quot;
 </code></pre>
 <p>And Lastly we need to add a service for our deployment. For now let's choose a service of type <code>NodePort</code></p>
@@ -4083,7 +4041,7 @@ spec:
 <pre><code class="language-go">func (r *GhostReconciler) addServiceIfNotExists(ctx context.Context, ghost *blogv1.Ghost) error {
 	log := log.FromContext(ctx)
 	service := &amp;corev1.Service{}
-	err := r.Get(ctx, client.ObjectKey{Namespace: ghost.Spec.Team, Name: svcNamePrefix + ghost.Spec.Team}, service)
+	err := r.Get(ctx, client.ObjectKey{Namespace: ghost.ObjectMeta.Namespace, Name: svcNamePrefix + ghost.ObjectMeta.Namespace}, service)
 	if err != nil &amp;&amp; client.IgnoreNotFound(err) != nil {
 		return err
 	}
@@ -4094,11 +4052,15 @@ spec:
 	}
 	// Service does not exist, create it
 	desiredService := generateDesiredService(ghost)
+	if err := controllerutil.SetControllerReference(ghost, desiredService, r.Scheme); err != nil {
+		return err
+	}
 
 	// Service does not exist, create it
 	if err := r.Create(ctx, desiredService); err != nil {
 		return err
 	}
+	r.recoder.Event(ghost, corev1.EventTypeNormal, &quot;ServiceCreated&quot;, &quot;Service created successfully&quot;)
 	log.Info(&quot;Service created&quot;, &quot;service&quot;, desiredService.Name)
 	return nil
 }
@@ -4106,8 +4068,8 @@ spec:
 func generateDesiredService(ghost *blogv1.Ghost) *corev1.Service {
 	return &amp;corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      &quot;ghost-service-&quot; + ghost.Spec.Team,
-			Namespace: ghost.Spec.Team,
+			Name:      &quot;ghost-service-&quot; + ghost.ObjectMeta.Namespace,
+			Namespace: ghost.ObjectMeta.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeNodePort,
@@ -4119,13 +4081,13 @@ func generateDesiredService(ghost *blogv1.Ghost) *corev1.Service {
 				},
 			},
 			Selector: map[string]string{
-				&quot;app&quot;: &quot;ghost-&quot; + ghost.Spec.Team,
+				&quot;app&quot;: &quot;ghost-&quot; + ghost.ObjectMeta.Namespace,
 			},
 		},
 	}
 }
 </code></pre>
-<h2 id="add-a-step-how-to-add-the-launchjson-debugger-to-the-vscode-config"><a class="header" href="#add-a-step-how-to-add-the-launchjson-debugger-to-the-vscode-config">Add a step how to add the launch.json debugger to the vscode config</a></h2>
+<h2 id="run-vscode-debuggger-and-modify-launchjson"><a class="header" href="#run-vscode-debuggger-and-modify-launchjson">Run vscode debuggger and modify launch.json</a></h2>
 <p>Being able to run our operator application in debug mode is definitely a nice thing. 
 Fortutanly we can simply do this on vscode. Let's click on the <code>create a launch.json file</code> in the <code>Run and Debug</code>.
 <img src="tutorials/../assets/launchjson.png" alt="vscode run and debug" width="70%"></p>
@@ -4148,7 +4110,120 @@ main.go file of our application which is at <code>cmd/main.go</code>.</p>
 }
 </code></pre>
 <h2 id="using-our-function-in-the-reconcile-loop"><a class="header" href="#using-our-function-in-the-reconcile-loop">Using our function in the reconcile loop.</a></h2>
-<p>Next we need to call our function in our reconcile function.</p>
+<p>Next we need to call our function in our reconcile function. We start by calling the functions we added one by one. 
+In case there is an error we update the status of our ghost deployment. For that, we need to make a couple of adjustments first.
+First we replace <code>GhostStatus</code> in <code>api/v1/ghost_types.go</code> with the following</p>
+<pre><code class="language-go">type GhostStatus struct {
+    Conditions []metav1.Condition `json:&quot;conditions,omitempty&quot;`
+}
+</code></pre>
+<p>and we add two helper functions to our controller. <code>internal/controller/ghost_controller.go</code></p>
+<pre><code class="language-go">// Function to add a condition to the GhostStatus
+func (s *GhostStatus) addCondition(condType metav1.ConditionType, status metav1.ConditionStatus, reason, message string) {
+    condition := metav1.Condition{
+        Type:    condType,
+        Status:  status,
+        Reason:  reason,
+        Message: message,
+    }
+    s.Conditions = append(s.Conditions, condition)
+}
+
+// Function to update the status of the Ghost object
+func (r *GhostReconciler) updateStatus(ctx context.Context, ghost *blogv1.Ghost, status *blogv1.GhostStatus) error {
+    // Update the status of the Ghost object
+    ghost.Status = *status
+    if err := r.Status().Update(ctx, ghost); err != nil {
+        return err
+    }
+    return nil
+}
+</code></pre>
+<p>And finally our reconcile function should be replaced with the following snippet.</p>
+<pre><code class="language-go">func (r *GhostReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
+	ghost := &amp;blogv1.Ghost{}
+	if err := r.Get(ctx, req.NamespacedName, ghost); err != nil {
+		log.Error(err, &quot;Failed to get Ghost&quot;)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	// Initialize completion status flags
+	// Add or update the namespace first
+	pvcReady := false
+	deploymentReady := false
+	serviceReady := false
+	log.Info(&quot;Reconciling Ghost&quot;, &quot;imageTag&quot;, ghost.Spec.ImageTag, &quot;team&quot;, ghost.ObjectMeta.Namespace)
+	// Add or update PVC
+	if err := r.addPvcIfNotExists(ctx, ghost); err != nil {
+		log.Error(err, &quot;Failed to add PVC for Ghost&quot;)
+		addCondition(&amp;ghost.Status, &quot;PVCNotReady&quot;, metav1.ConditionFalse, &quot;PVCNotReady&quot;, &quot;Failed to add PVC for Ghost&quot;)
+		return ctrl.Result{}, err
+	} else {
+		pvcReady = true
+	}
+	// Add or update Deployment
+	if err := r.addOrUpdateDeployment(ctx, ghost); err != nil {
+		log.Error(err, &quot;Failed to add or update Deployment for Ghost&quot;)
+		addCondition(&amp;ghost.Status, &quot;DeploymentNotReady&quot;, metav1.ConditionFalse, &quot;DeploymentNotReady&quot;, &quot;Failed to add or update Deployment for Ghost&quot;)
+		return ctrl.Result{}, err
+	} else {
+		deploymentReady = true
+	}
+	// Add or update Service
+	if err := r.addServiceIfNotExists(ctx, ghost); err != nil {
+		log.Error(err, &quot;Failed to add Service for Ghost&quot;)
+		addCondition(&amp;ghost.Status, &quot;ServiceNotReady&quot;, metav1.ConditionFalse, &quot;ServiceNotReady&quot;, &quot;Failed to add Service for Ghost&quot;)
+		return ctrl.Result{}, err
+	} else {
+		serviceReady = true
+	}
+	// Check if all subresources are ready
+	if pvcReady &amp;&amp; deploymentReady &amp;&amp; serviceReady {
+		// Add your desired condition when all subresources are ready
+		addCondition(&amp;ghost.Status, &quot;GhostReady&quot;, metav1.ConditionTrue, &quot;AllSubresourcesReady&quot;, &quot;All subresources are ready&quot;)
+	}
+	log.Info(&quot;Reconciliation complete&quot;)
+	if err := r.updateStatus(ctx, ghost); err != nil {
+		log.Error(err, &quot;Failed to update Ghost status&quot;)
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+</code></pre>
+<p>now, let us run our operator application. before we do that let's make sure we are starting from scratch.</p>
+<pre><code class="language-shell">kubectl delete namespace marketing
+</code></pre>
+<pre><code class="language-shell">make run
+</code></pre>
+<p>we can see the logs and see that our operator application is up and running, 
+in another termainl we create a ghost resource.</p>
+<pre><code class="language-shell">kubectl create namespace marketing
+kubectl apply -f config/samples/blog_v1_ghost.yaml
+</code></pre>
+<p>We start to see our reconciliation logs showing up and our subresources being created. We can inspect them by running <code>k9s</code>.
+We can perform a portforward on the service to see our ghost application in a browser.</p>
+<h2 id="updating-the-ghost-resource"><a class="header" href="#updating-the-ghost-resource">Updating the ghost resource</a></h2>
+<p>let us perform an update on our resource and use the <code>alpine</code> image tag instead of <code>latest</code>.
+So, let us replace <code>config/samples/blog_v1_ghost.yaml</code> with the following and apply it.</p>
+<pre><code class="language-yaml">apiVersion: blog.example.com/v1
+kind: Ghost
+metadata:
+  name: ghost-sample
+  namespace: marketing
+spec:
+  imageTag: alpine
+</code></pre>
+<pre><code class="language-shell">kubectl apply -f config/samples/blog_v1_ghost.yaml
+</code></pre>
+<p>We can see that our deployment subresource is being updated and the update logs are showing up in the console. We can confirm this by inspecting the deployment in <code>k9s</code>.</p>
+<h2 id="deleting-the-ghost-resource"><a class="header" href="#deleting-the-ghost-resource">Deleting the ghost resource</a></h2>
+<p>If perform a delete operation on our resource, all the subresouces will be deleted too, as we set their owner to be the ghost resource.
+Please notice the <code>controllerutil.SetControllerReference</code> usage, before creating the subresources.</p>
+<p>Let us perform the delete and see the effect.</p>
+<pre><code class="language-shell">kubectl delete ghosts.blog.example.com -n marketing ghost-sample
+</code></pre>
+<p>We can see all the subresources are deleted.</p>
 <h1 id="serverless"><a class="header" href="#serverless">Serverless</a></h1>
 <h1 id="100days-resources-25"><a class="header" href="#100days-resources-25">100Days Resources</a></h1>
 <ul>
