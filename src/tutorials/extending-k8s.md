@@ -380,7 +380,7 @@ the output should be
   }
 }
 ```
-## accessing the our custom resource inside the reconcile function
+## accessing the custom resource inside the reconcile function
 
 now let's try to access our custom resource in the `reconcile` function. 
 first off, let us reflect our new fields in our cutom resource.
@@ -443,7 +443,7 @@ INFO    Reconciliation complete {"controller": "ghost", "controllerGroup": "blog
 
 cool! next stop, we will implement the actual controller logic for our ghost operator.
 
-## implementing the ghost operator logic
+## implementing the ghost operator logic, part 1 - PVC
 Before we start coding the ghost operator, we need to know what resources we need in order to deploy ghost to our cluster. let's consult the docker hub page for ghost. https://hub.docker.com/_/ghost
 
 As we would like to persist ghost data to a persistent volume, we can try to convert this docker command to a k8s deployment. 
@@ -567,6 +567,8 @@ const svcNamePrefix = "ghost-service-"
 right after our `GhostReconciler` struct. (around line 40).
 The `addPvcIfNotExists` function, checks whether the `pvc` is already created and if not, it will create it in the right namespace.
 
+## implementing the ghost operator logic, part 2 - Deployment
+
 Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that `addOrUpdateDeployment` can also update a deployment in case the deployed `imageTag` for the ghost image is different from the one coming from the `ghost.Spec` aka. desired state.
 
@@ -689,6 +691,10 @@ Let's make sure `apps/v1` import statement is added to the import section.
 ```go
 appsv1 "k8s.io/api/apps/v1"
 ```
+
+## implementing the ghost operator logic, part 3 - Service
+
+
 And Lastly we need to add a service for our deployment. For now let's choose a service of type `NodePort`
 ```yaml
 apiVersion: v1
@@ -706,6 +712,7 @@ spec:
 ```
 
 Next, we need to implement a go funtion that creates such service for us.
+
 ```go
 func (r *GhostReconciler) addServiceIfNotExists(ctx context.Context, ghost *blogv1.Ghost) error {
 	log := log.FromContext(ctx)
