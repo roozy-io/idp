@@ -469,7 +469,7 @@ If <code>omitempty</code> is used in a json tag, that field will be marked as <c
   }
 }
 </code></pre>
-<h2 id="accessing-the-our-custom-resource-inside-the-reconcile-function"><a class="header" href="#accessing-the-our-custom-resource-inside-the-reconcile-function">accessing the our custom resource inside the reconcile function</a></h2>
+<h2 id="accessing-the-custom-resource-inside-the-reconcile-function"><a class="header" href="#accessing-the-custom-resource-inside-the-reconcile-function">accessing the custom resource inside the reconcile function</a></h2>
 <p>now let's try to access our custom resource in the <code>reconcile</code> function. 
 first off, let us reflect our new fields in our cutom resource.
 let us replace <code>config/samples/blog_v1_ghost.yaml</code> with the following</p>
@@ -513,7 +513,7 @@ line 3 tries to read a ghost instance from the reconciler client. Please note th
 INFO    Reconciliation complete {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;marketing&quot;}, &quot;namespace&quot;: &quot;marketing&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;}
 </code></pre>
 <p>cool! next stop, we will implement the actual controller logic for our ghost operator.</p>
-<h2 id="implementing-the-ghost-operator-logic"><a class="header" href="#implementing-the-ghost-operator-logic">implementing the ghost operator logic</a></h2>
+<h2 id="implementing-the-ghost-operator-logic-part-1---pvc"><a class="header" href="#implementing-the-ghost-operator-logic-part-1---pvc">implementing the ghost operator logic, part 1 - PVC</a></h2>
 <p>Before we start coding the ghost operator, we need to know what resources we need in order to deploy ghost to our cluster. let's consult the docker hub page for ghost. https://hub.docker.com/_/ghost</p>
 <p>As we would like to persist ghost data to a persistent volume, we can try to convert this docker command to a k8s deployment. </p>
 <pre><code class="language-shell">docker run -d \
@@ -625,6 +625,7 @@ const svcNamePrefix = &quot;ghost-service-&quot;
 </code></pre>
 <p>right after our <code>GhostReconciler</code> struct. (around line 40).
 The <code>addPvcIfNotExists</code> function, checks whether the <code>pvc</code> is already created and if not, it will create it in the right namespace.</p>
+<h2 id="implementing-the-ghost-operator-logic-part-2---deployment"><a class="header" href="#implementing-the-ghost-operator-logic-part-2---deployment">implementing the ghost operator logic, part 2 - Deployment</a></h2>
 <p>Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that <code>addOrUpdateDeployment</code> can also update a deployment in case the deployed <code>imageTag</code> for the ghost image is different from the one coming from the <code>ghost.Spec</code> aka. desired state.</p>
 <pre><code class="language-go">func (r *GhostReconciler) addOrUpdateDeployment(ctx context.Context, ghost *blogv1.Ghost) error {
@@ -743,6 +744,7 @@ func generateDesiredDeployment(ghost *blogv1.Ghost) *appsv1.Deployment {
 <p>Let's make sure <code>apps/v1</code> import statement is added to the import section.</p>
 <pre><code class="language-go">appsv1 &quot;k8s.io/api/apps/v1&quot;
 </code></pre>
+<h2 id="implementing-the-ghost-operator-logic-part-3---service"><a class="header" href="#implementing-the-ghost-operator-logic-part-3---service">implementing the ghost operator logic, part 3 - Service</a></h2>
 <p>And Lastly we need to add a service for our deployment. For now let's choose a service of type <code>NodePort</code></p>
 <pre><code class="language-yaml">apiVersion: v1
 kind: Service
