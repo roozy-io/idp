@@ -4111,7 +4111,7 @@ main.go file of our application which is at <code>cmd/main.go</code>.</p>
     ]
 }
 </code></pre>
-<h2 id="using-our-function-in-the-reconcile-loop"><a class="header" href="#using-our-function-in-the-reconcile-loop">Using our function in the reconcile loop.</a></h2>
+<h2 id="using-our-functions-in-the-reconcile-loop"><a class="header" href="#using-our-functions-in-the-reconcile-loop">Using our functions in the reconcile loop.</a></h2>
 <p>Next we need to call our function in our reconcile function. We start by calling the functions we added one by one. 
 In case there is an error we update the status of our ghost deployment. For that, we need to make a couple of adjustments first.
 First we replace <code>GhostStatus</code> in <code>api/v1/ghost_types.go</code> with the following</p>
@@ -4226,6 +4226,8 @@ Please notice the <code>controllerutil.SetControllerReference</code> usage, befo
 <pre><code class="language-shell">kubectl delete ghosts.blog.example.com -n marketing ghost-sample
 </code></pre>
 <p>We can see all the subresources are deleted.</p>
+<pre><code class="language-shell">kubectl get all -n marketing
+</code></pre>
 <h1 id="serverless"><a class="header" href="#serverless">Serverless</a></h1>
 <h1 id="100days-resources-25"><a class="header" href="#100days-resources-25">100Days Resources</a></h1>
 <ul>
