@@ -789,7 +789,7 @@ main.go file of our application which is at `cmd/main.go`.
     ]
 }
 ```
-## Using our function in the reconcile loop.
+## Using our functions in the reconcile loop.
 Next we need to call our function in our reconcile function. We start by calling the functions we added one by one. 
 In case there is an error we update the status of our ghost deployment. For that, we need to make a couple of adjustments first.
 First we replace `GhostStatus` in `api/v1/ghost_types.go` with the following
@@ -926,3 +926,7 @@ Let us perform the delete and see the effect.
 kubectl delete ghosts.blog.example.com -n marketing ghost-sample
 ```
 We can see all the subresources are deleted.
+
+```shell
+kubectl get all -n marketing
+```
