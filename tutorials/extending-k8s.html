@@ -937,7 +937,10 @@ in another termainl we create a ghost resource.</p>
 kubectl apply -f config/samples/blog_v1_ghost.yaml
 </code></pre>
 <p>We start to see our reconciliation logs showing up and our subresources being created. We can inspect them by running <code>k9s</code>.
-We can perform a portforward on the service to see our ghost application in a browser.</p>
+We can perform a portforward on the service to see our ghost application in a browser.
+Let's have a look at our ghost resource as well.</p>
+<pre><code class="language-shell">kubectl describe -n marketing ghosts.blog.example.com ghost-sample
+</code></pre>
 <h2 id="updating-the-ghost-resource"><a class="header" href="#updating-the-ghost-resource">Updating the ghost resource</a></h2>
 <p>let us perform an update on our resource and use the <code>alpine</code> image tag instead of <code>latest</code>.
 So, let us replace <code>config/samples/blog_v1_ghost.yaml</code> with the following and apply it.</p>
@@ -960,6 +963,26 @@ Please notice the <code>controllerutil.SetControllerReference</code> usage, befo
 </code></pre>
 <p>We can see all the subresources are deleted.</p>
 <pre><code class="language-shell">kubectl get all -n marketing
+</code></pre>
+<h2 id="deploying-the-operator-to-kubernetes"><a class="header" href="#deploying-the-operator-to-kubernetes">Deploying the Operator to Kubernetes</a></h2>
+<p>Your operator is an application, so it needs to be packaged as a OCI compliant container image just like any other container you want to deploy.</p>
+<p>We need to run the right make command to build our OCI image and then Deploy it.</p>
+<p>Build</p>
+<pre><code class="language-shell"># please use your own tag here! :D 
+export IMG=c8n.io/aghilish/ghost-operator:latest
+make docker-build
+</code></pre>
+<p>Push</p>
+<pre><code class="language-shell">make docker-push
+</code></pre>
+<p>Deploy</p>
+<pre><code class="language-shell">make deploy
+</code></pre>
+<p>Undeploy</p>
+<pre><code class="language-shell">make deploy
+</code></pre>
+<p>And we can look around and inspect the logs of our manager when we CRUD operations with our ghost API.</p>
+<pre><code class="language-shell">kubectl get all -n ghost-operator-system
 </code></pre>
 
                     </main>
