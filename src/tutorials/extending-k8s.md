@@ -597,7 +597,7 @@ make manifests
 ```
 The generated manifest for the manager cluster role, will be generated at `config/rbac/role.yaml`
 
-## 10. Implement the Ghost Operator Logic, Part 2 - Deployment
+## 10. Implement the Ghost Operator Logic, Part 3 - Deployment
 
 Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that `addOrUpdateDeployment` can also update a deployment in case the deployed `imageTag` for the ghost image is different from the one coming from the `ghost.Spec` aka. desired state.
@@ -722,7 +722,7 @@ Let's make sure `apps/v1` import statement is added to the import section.
 appsv1 "k8s.io/api/apps/v1"
 ```
 
-## 11. Implement the Ghost Operator Logic, Part 3 - Service
+## 11. Implement the Ghost Operator Logic, Part 4 - Service
 
 
 And Lastly we need to add a service for our deployment. For now let's choose a service of type `NodePort`
