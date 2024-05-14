@@ -567,7 +567,32 @@ const svcNamePrefix = "ghost-service-"
 right after our `GhostReconciler` struct. (around line 40).
 The `addPvcIfNotExists` function, checks whether the `pvc` is already created and if not, it will create it in the right namespace.
 
-## implementing the ghost operator logic, part 2 - Deployment
+## implmenting the ghost operator logic, part 2 - RBAC
+
+Next, we need to specify the kubebuilder markers for RBAC. After we created our apis there are 3 markers generated bu default.
+```go
+//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/finalizers,verbs=update
+```
+These markers with `//+kubebuilder` prefix are picked up by `make manfists` where a `ClusterRole` manifests is generated and assiged to the operator manager application. When we CRUD other APIs such as deployment, services and Persistent Volume Claims, we need to add those related markers, otherwise our operator will be unauthorized to perform those operations. In case of our operator, we need to additional markers right below the default ones.
+
+```go
+//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/events,verbs=get;list;watch;create;update;patch
+//+kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+```
+
+Please note the first one, is needed when we later introduce a function to persist operator events in the ghost resource.
+To generate RBAC manfiests, we can run
+
+```shell
+make manifests
+```
+The generated manifest for the manager cluster role, will be generated at `config/rbac/role.yaml`
+
+## implementing the ghost operator logic, part 3 - Deployment
 
 Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that `addOrUpdateDeployment` can also update a deployment in case the deployed `imageTag` for the ghost image is different from the one coming from the `ghost.Spec` aka. desired state.
@@ -692,7 +717,7 @@ Let's make sure `apps/v1` import statement is added to the import section.
 appsv1 "k8s.io/api/apps/v1"
 ```
 
-## implementing the ghost operator logic, part 3 - Service
+## implementing the ghost operator logic, part 4 - Service
 
 
 And Lastly we need to add a service for our deployment. For now let's choose a service of type `NodePort`
@@ -971,7 +996,7 @@ make deploy
 
 Undeploy
 ```shell
-make deploy
+make undeploy
 ```
 And we can look around and inspect the logs of our manager when we CRUD operations with our ghost API.
 
