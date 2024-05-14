@@ -15,7 +15,8 @@
 > Extension Points [Details](https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure)
 <img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%">
 
-## In this tutorial we will be focusing on extension point 2 (Kubernetes API).
+## 1. A Look into Custom Resource Definition (CRD) API
+
 | Declarative APIs | Imperative APIs |
 |-----------------|-----------------|
 | Your API consists of a relatively small number of relatively small objects (resources). | The client says "do this", and then gets a synchronous response back when it is done. |
@@ -152,8 +153,10 @@ kubectl delete CronTab my-new-cron-object
 ```
 
 //TODO: add some text  why we need kubebuilder and what is an operator application and the relationship between a controller and an operator etc.
+
+## 2. Install Kubebuilder and Create a New Project
+
 let's start by installing kubebuilder
-//TODO: add kubebuilder to the killercoda
 ```shell
 # download kubebuilder and install locally.
 curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
@@ -190,10 +193,9 @@ run: manifests generate fmt vet ## Run a controller from your host.
 > 1. `manifests` and `generate` which both have controller-gen as prerequisite and generate some golang code and yaml manifests 
 > 2. the code is formatted by `fmt` 
 > 3. validated by `vet` 
-> 4. run will run the go application by refering to the application entrypoint at ./cmd/main.go 
+> 4. `run` will run the go application by refering to the application entrypoint at ./cmd/main.go 
 
-## Now we have a working yet empty go application. 
-let's add some meaningful code to it 
+## 3. Create Our First API
 
 Let's imagine we are a working at company where our colleagues are heavy users of the `ghost` blogging application.
 Our job is to provide them with ghost instances whenever and whereever they want it. We are infra gurus and through years of
@@ -216,6 +218,8 @@ kubebuilder create api \
   --resource true \
   --controller true
 ```
+
+
 At this stage, Kubebuilder has wired up two key components for your operator:
 
 A Resource in the form of a Custom Resource Definition (CRD) with the kind `Ghost`.
@@ -237,7 +241,6 @@ you will find the generated crd at `config/crd/bases/blog.example.com_ghosts.yam
 see how kubebuilder did all the heavylifting we had to previously do for the crontab example! lovely!
 
 
-## Now let's install the CRD into our cluster
 let's notice the difference by looking at our kubernetes crds
 
 ```shell
@@ -254,7 +257,8 @@ and run the get the crds again
 kubectl get crds
 ```
 
-## A look into kubebuilder setup
+## 4. A look into kubebuilder setup
+
 When you selected to create a operator along with the `Ghost` Resource, Kubebuilder took care of some key setup:
 
 1. Starts the operator process during application boot
@@ -279,7 +283,7 @@ It is already configured to know about the CRD `api/v1/ghost_types.go` or the ge
 
 The most important function inside the controller is the `Reconcile` function `internal/controller/ghost_controller.go:49`.  Reconcile is part of the main kubernetes reconciliation loop which aims to move the current state of the cluster closer to the desired state. It is triggered anytime we change the cluster state related to our custom resource `internal/controller/ghost_controller.go:49`.
 
-## add some logging to the reconcile function
+## 5. Add Some Logging to the Reconcile Function
 let's add some logs to the reconcile function and run the operator application and change the state of the cluster.
 let's paste this code into the `Reconcile` function. 
 
@@ -327,9 +331,9 @@ kubectl delete -f config/samples/blog_v1_ghost.yaml
 
 Same logs showed up again. So basically _anytime_ you interact with your `Ghost` resource a new event is triggered and your controller will print the logs. 
 
-## implementing the desire state of the ghost operator
+## 6. Implement the Desired State of the Ghost Operator
 
-Ok, now let's replace the default GhostSpec with a meaningful declartion of our desired state. Meaning we want our custom resource reflect the desired state for our Ghost application.
+Now let us replace the default GhostSpec with a meaningful declartion of our desired state. Meaning we want our custom resource reflect the desired state for our Ghost application.
 
 replace GhostSpec `api/v1/ghost_types.go:27` with the following snippet
 ```go
@@ -380,7 +384,7 @@ the output should be
   }
 }
 ```
-## accessing the custom resource inside the reconcile function
+## 7. Access the Custom Resource Inside the Reconcile Function
 
 now let's try to access our custom resource in the `reconcile` function. 
 first off, let us reflect our new fields in our cutom resource.
@@ -443,7 +447,7 @@ INFO    Reconciliation complete {"controller": "ghost", "controllerGroup": "blog
 
 cool! next stop, we will implement the actual controller logic for our ghost operator.
 
-## implementing the ghost operator logic, part 1 - PVC
+## 8. Implement the Ghost Operator Logic, Part 1 - PVC
 Before we start coding the ghost operator, we need to know what resources we need in order to deploy ghost to our cluster. let's consult the docker hub page for ghost. https://hub.docker.com/_/ghost
 
 As we would like to persist ghost data to a persistent volume, we can try to convert this docker command to a k8s deployment. 
@@ -567,7 +571,7 @@ const svcNamePrefix = "ghost-service-"
 right after our `GhostReconciler` struct. (around line 40).
 The `addPvcIfNotExists` function, checks whether the `pvc` is already created and if not, it will create it in the right namespace.
 
-## implmenting the ghost operator logic, part 2 - RBAC
+## 9. Implement the Ghost Operator Logic, Part 2 - RBAC
 
 Next, we need to specify the kubebuilder markers for RBAC. After we created our apis there are 3 markers generated by default.
 
@@ -593,7 +597,7 @@ make manifests
 ```
 The generated manifest for the manager cluster role, will be generated at `config/rbac/role.yaml`
 
-## implementing the ghost operator logic, part 3 - Deployment
+## 10. Implement the Ghost Operator Logic, Part 2 - Deployment
 
 Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that `addOrUpdateDeployment` can also update a deployment in case the deployed `imageTag` for the ghost image is different from the one coming from the `ghost.Spec` aka. desired state.
@@ -718,7 +722,7 @@ Let's make sure `apps/v1` import statement is added to the import section.
 appsv1 "k8s.io/api/apps/v1"
 ```
 
-## implementing the ghost operator logic, part 4 - Service
+## 11. Implement the Ghost Operator Logic, Part 3 - Service
 
 
 And Lastly we need to add a service for our deployment. For now let's choose a service of type `NodePort`
@@ -790,32 +794,7 @@ func generateDesiredService(ghost *blogv1.Ghost) *corev1.Service {
 }
 ```
 
-## Run vscode debuggger and modify launch.json
-Being able to run our operator application in debug mode is definitely a nice thing. 
-Fortutanly we can simply do this on vscode. Let's click on the `create a launch.json file` in the `Run and Debug`.
-<img src="../assets/launchjson.png" alt="vscode run and debug" width="70%">
-
-Next we select `Go` and `Go Launch Package`. In the generated json file we need to adjust the program argument and set it to the 
-main.go file of our application which is at `cmd/main.go`.
-
-```json
-{
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Launch Package",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "${fileDirname}/cmd/main.go"
-        }
-    ]
-}
-```
-## Using our functions in the reconcile loop.
+## 12. Implement the Final Logic of the Reconcile Function
 Next we need to call our function in our reconcile function. We start by calling the functions we added one by one. 
 In case there is an error we update the status of our ghost deployment. For that, we need to make a couple of adjustments first.
 First we replace `GhostStatus` in `api/v1/ghost_types.go` with the following
@@ -940,7 +919,7 @@ Let's have a look at our ghost resource as well.
 kubectl describe -n marketing ghosts.blog.example.com ghost-sample
 ```
 
-## Updating the ghost resource
+## 13. Update the Ghost Resource
 let us perform an update on our resource and use the `alpine` image tag instead of `latest`.
 So, let us replace `config/samples/blog_v1_ghost.yaml` with the following and apply it.
 
@@ -960,7 +939,7 @@ kubectl apply -f config/samples/blog_v1_ghost.yaml
 
 We can see that our deployment subresource is being updated and the update logs are showing up in the console. We can confirm this by inspecting the deployment in `k9s`.
 
-## Deleting the ghost resource
+## 14. Deleting the ghost resource
 If perform a delete operation on our resource, all the subresouces will be deleted too, as we set their owner to be the ghost resource.
 Please notice the `controllerutil.SetControllerReference` usage, before creating the subresources.
 
@@ -974,7 +953,7 @@ We can see all the subresources are deleted.
 kubectl get all -n marketing
 ```
 
-## Deploying the Operator to Kubernetes
+## 15. Deploy Ghost Operator to the Cluster
 
 Your operator is an application, so it needs to be packaged as a OCI compliant container image just like any other container you want to deploy.
 
@@ -1004,3 +983,29 @@ And we can look around and inspect the logs of our manager when we CRUD operatio
 ```shell
 kubectl get all -n ghost-operator-system
 ```
+
+## 16. [Bonus] Setup VSCode Debugger
+
+Being able to run our operator application in debug mode is definitely a nice thing. 
+Fortutanly we can simply do this on vscode. Let's click on the `create a launch.json file` in the `Run and Debug`.
+<img src="../assets/launchjson.png" alt="vscode run and debug" width="70%">
+
+Next we select `Go` and `Go Launch Package`. In the generated json file we need to adjust the program argument and set it to the 
+main.go file of our application which is at `cmd/main.go`.
+
+```json
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Package",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${fileDirname}/cmd/main.go"
+        }
+    ]
+}
