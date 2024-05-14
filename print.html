@@ -3911,7 +3911,7 @@ The <code>addPvcIfNotExists</code> function, checks whether the <code>pvc</code>
 //+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/finalizers,verbs=update
 </code></pre>
-<p>These markers with <code>//+kubebuilder</code> prefix are picked up by <code>make manfists</code> where a <code>ClusterRole</code> manifests is generated and assiged to the operator manager application. When we CRUD other APIs such as deployment, services and Persistent Volume Claims, we need to add those related markers, otherwise our operator will be unauthorized to perform those operations. In case of our operator, we need to additional markers right below the default ones.</p>
+<p>These markers with <code>//+kubebuilder</code> prefix are picked up by <code>make manfists</code> where a <code>ClusterRole</code> manifests is generated and assiged to the operator manager application. When we CRUD other APIs such as deployment, services and Persistent Volume Claims, we need to add those related markers, otherwise our operator will be unauthorized to perform those operations. In case of our operator, we need to additional markers right below the default ones at <code>internal/controller/ghost_controller.go</code>.</p>
 <pre><code class="language-go">//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/events,verbs=get;list;watch;create;update;patch
 //+kubebuilder:rbac:groups=&quot;&quot;,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
