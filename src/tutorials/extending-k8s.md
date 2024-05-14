@@ -1,12 +1,14 @@
-# Extending k8s api like a pro.
+# A Crash Course on Extending Kubernetes - Kubebuilder 2024 - 3.14.0.
 
 # Links
 * [Video by Shahrooz Aghili](https://www.youtube.com/watch?v=)
+* [Killercoda Hands-on Lab](https://killercoda.com/aghilish/scenario/extending_k8s)
 
 # Learning Resources
 
 1. [Extending k8s](https://kubernetes.io/docs/concepts/extend-kubernetes/)
 2. [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
+3. [Kubebuilder Docs](https://kubebuilder.io)
 
 # Notes
 
