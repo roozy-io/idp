@@ -803,24 +803,37 @@ type GhostStatus struct {
 and we add two helper functions to our controller. `internal/controller/ghost_controller.go`
 ```go
 // Function to add a condition to the GhostStatus
-func (s *GhostStatus) addCondition(condType metav1.ConditionType, status metav1.ConditionStatus, reason, message string) {
-    condition := metav1.Condition{
-        Type:    condType,
-        Status:  status,
-        Reason:  reason,
-        Message: message,
-    }
-    s.Conditions = append(s.Conditions, condition)
+func addCondition(status *blogv1.GhostStatus, condType string, statusType metav1.ConditionStatus, reason, message string) {
+	for i, existingCondition := range status.Conditions {
+		if existingCondition.Type == condType {
+			// Condition already exists, update it
+			status.Conditions[i].Status = statusType
+			status.Conditions[i].Reason = reason
+			status.Conditions[i].Message = message
+			status.Conditions[i].LastTransitionTime = metav1.Now()
+			return
+		}
+	}
+
+	// Condition does not exist, add it
+	condition := metav1.Condition{
+		Type:               condType,
+		Status:             statusType,
+		Reason:             reason,
+		Message:            message,
+		LastTransitionTime: metav1.Now(),
+	}
+	status.Conditions = append(status.Conditions, condition)
 }
 
 // Function to update the status of the Ghost object
-func (r *GhostReconciler) updateStatus(ctx context.Context, ghost *blogv1.Ghost, status *blogv1.GhostStatus) error {
-    // Update the status of the Ghost object
-    ghost.Status = *status
-    if err := r.Status().Update(ctx, ghost); err != nil {
-        return err
-    }
-    return nil
+func (r *GhostReconciler) updateStatus(ctx context.Context, ghost *blogv1.Ghost) error {
+	// Update the status of the Ghost object
+	if err := r.Status().Update(ctx, ghost); err != nil {
+		return err
+	}
+
+	return nil
 }
 ```
 And finally our reconcile function should be replaced with the following snippet.
