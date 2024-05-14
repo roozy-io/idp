@@ -6,7 +6,7 @@
 
 # Learning Resources
 
-1. [Extending k8s](https://kubernetes.io/docs/concepts/extend-kubernetes/)
+1. [Kubernetes Docs](https://kubernetes.io/docs/concepts/extend-kubernetes/)
 2. [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 3. [Kubebuilder Docs](https://kubebuilder.io)
 
