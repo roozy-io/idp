@@ -909,6 +909,10 @@ kubectl apply -f config/samples/blog_v1_ghost.yaml
 
 We start to see our reconciliation logs showing up and our subresources being created. We can inspect them by running `k9s`.
 We can perform a portforward on the service to see our ghost application in a browser.
+Let's have a look at our ghost resource as well.
+```shell
+kubectl describe -n marketing ghosts.blog.example.com ghost-sample
+```
 
 ## Updating the ghost resource
 let us perform an update on our resource and use the `alpine` image tag instead of `latest`.
@@ -942,4 +946,35 @@ We can see all the subresources are deleted.
 
 ```shell
 kubectl get all -n marketing
+```
+
+## Deploying the Operator to Kubernetes
+
+Your operator is an application, so it needs to be packaged as a OCI compliant container image just like any other container you want to deploy.
+
+We need to run the right make command to build our OCI image and then Deploy it.
+
+Build
+```shell
+# please use your own tag here! :D 
+export IMG=c8n.io/aghilish/ghost-operator:latest
+make docker-build
+```
+Push
+```shell
+make docker-push
+```
+Deploy
+```shell
+make deploy
+```
+
+Undeploy
+```shell
+make deploy
+```
+And we can look around and inspect the logs of our manager when we CRUD operations with our ghost API.
+
+```shell
+kubectl get all -n ghost-operator-system
 ```
