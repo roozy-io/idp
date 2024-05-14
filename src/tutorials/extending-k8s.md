@@ -570,12 +570,13 @@ The `addPvcIfNotExists` function, checks whether the `pvc` is already created an
 ## implmenting the ghost operator logic, part 2 - RBAC
 
 Next, we need to specify the kubebuilder markers for RBAC. After we created our apis there are 3 markers generated bu default.
+
 ```go
 //+kubebuilder:rbac:groups=blog.example.com,resources=ghosts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/finalizers,verbs=update
 ```
-These markers with `//+kubebuilder` prefix are picked up by `make manfists` where a `ClusterRole` manifests is generated and assiged to the operator manager application. When we CRUD other APIs such as deployment, services and Persistent Volume Claims, we need to add those related markers, otherwise our operator will be unauthorized to perform those operations. In case of our operator, we need to additional markers right below the default ones.
+These markers with `//+kubebuilder` prefix are picked up by `make manfists` where a `ClusterRole` manifests is generated and assiged to the operator manager application. When we CRUD other APIs such as deployment, services and Persistent Volume Claims, we need to add those related markers, otherwise our operator will be unauthorized to perform those operations. In case of our operator, we need to additional markers right below the default ones at `internal/controller/ghost_controller.go`.
 
 ```go
 //+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/events,verbs=get;list;watch;create;update;patch
