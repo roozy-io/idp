@@ -3905,7 +3905,24 @@ const svcNamePrefix = &quot;ghost-service-&quot;
 </code></pre>
 <p>right after our <code>GhostReconciler</code> struct. (around line 40).
 The <code>addPvcIfNotExists</code> function, checks whether the <code>pvc</code> is already created and if not, it will create it in the right namespace.</p>
-<h2 id="implementing-the-ghost-operator-logic-part-2---deployment"><a class="header" href="#implementing-the-ghost-operator-logic-part-2---deployment">implementing the ghost operator logic, part 2 - Deployment</a></h2>
+<h2 id="implmenting-the-ghost-operator-logic-part-2---rbac"><a class="header" href="#implmenting-the-ghost-operator-logic-part-2---rbac">implmenting the ghost operator logic, part 2 - RBAC</a></h2>
+<p>Next, we need to specify the kubebuilder markers for RBAC. After we created our apis there are 3 markers generated bu default.</p>
+<pre><code class="language-go">//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/finalizers,verbs=update
+</code></pre>
+<p>These markers with <code>//+kubebuilder</code> prefix are picked up by <code>make manfists</code> where a <code>ClusterRole</code> manifests is generated and assiged to the operator manager application. When we CRUD other APIs such as deployment, services and Persistent Volume Claims, we need to add those related markers, otherwise our operator will be unauthorized to perform those operations. In case of our operator, we need to additional markers right below the default ones.</p>
+<pre><code class="language-go">//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/events,verbs=get;list;watch;create;update;patch
+//+kubebuilder:rbac:groups=&quot;&quot;,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=&quot;&quot;,resources=services,verbs=get;list;watch;create;update;patch;delete
+</code></pre>
+<p>Please note the first one, is needed when we later introduce a function to persist operator events in the ghost resource.
+To generate RBAC manfiests, we can run</p>
+<pre><code class="language-shell">make manifests
+</code></pre>
+<p>The generated manifest for the manager cluster role, will be generated at <code>config/rbac/role.yaml</code></p>
+<h2 id="implementing-the-ghost-operator-logic-part-3---deployment"><a class="header" href="#implementing-the-ghost-operator-logic-part-3---deployment">implementing the ghost operator logic, part 3 - Deployment</a></h2>
 <p>Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that <code>addOrUpdateDeployment</code> can also update a deployment in case the deployed <code>imageTag</code> for the ghost image is different from the one coming from the <code>ghost.Spec</code> aka. desired state.</p>
 <pre><code class="language-go">func (r *GhostReconciler) addOrUpdateDeployment(ctx context.Context, ghost *blogv1.Ghost) error {
@@ -4024,7 +4041,7 @@ func generateDesiredDeployment(ghost *blogv1.Ghost) *appsv1.Deployment {
 <p>Let's make sure <code>apps/v1</code> import statement is added to the import section.</p>
 <pre><code class="language-go">appsv1 &quot;k8s.io/api/apps/v1&quot;
 </code></pre>
-<h2 id="implementing-the-ghost-operator-logic-part-3---service"><a class="header" href="#implementing-the-ghost-operator-logic-part-3---service">implementing the ghost operator logic, part 3 - Service</a></h2>
+<h2 id="implementing-the-ghost-operator-logic-part-4---service"><a class="header" href="#implementing-the-ghost-operator-logic-part-4---service">implementing the ghost operator logic, part 4 - Service</a></h2>
 <p>And Lastly we need to add a service for our deployment. For now let's choose a service of type <code>NodePort</code></p>
 <pre><code class="language-yaml">apiVersion: v1
 kind: Service
@@ -4259,7 +4276,7 @@ make docker-build
 <pre><code class="language-shell">make deploy
 </code></pre>
 <p>Undeploy</p>
-<pre><code class="language-shell">make deploy
+<pre><code class="language-shell">make undeploy
 </code></pre>
 <p>And we can look around and inspect the logs of our manager when we CRUD operations with our ghost API.</p>
 <pre><code class="language-shell">kubectl get all -n ghost-operator-system
