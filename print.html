@@ -3920,7 +3920,7 @@ To generate RBAC manfiests, we can run</p>
 <pre><code class="language-shell">make manifests
 </code></pre>
 <p>The generated manifest for the manager cluster role, will be generated at <code>config/rbac/role.yaml</code></p>
-<h2 id="10-implement-the-ghost-operator-logic-part-2---deployment"><a class="header" href="#10-implement-the-ghost-operator-logic-part-2---deployment">10. Implement the Ghost Operator Logic, Part 2 - Deployment</a></h2>
+<h2 id="10-implement-the-ghost-operator-logic-part-3---deployment"><a class="header" href="#10-implement-the-ghost-operator-logic-part-3---deployment">10. Implement the Ghost Operator Logic, Part 3 - Deployment</a></h2>
 <p>Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that <code>addOrUpdateDeployment</code> can also update a deployment in case the deployed <code>imageTag</code> for the ghost image is different from the one coming from the <code>ghost.Spec</code> aka. desired state.</p>
 <pre><code class="language-go">func (r *GhostReconciler) addOrUpdateDeployment(ctx context.Context, ghost *blogv1.Ghost) error {
@@ -4039,7 +4039,7 @@ func generateDesiredDeployment(ghost *blogv1.Ghost) *appsv1.Deployment {
 <p>Let's make sure <code>apps/v1</code> import statement is added to the import section.</p>
 <pre><code class="language-go">appsv1 &quot;k8s.io/api/apps/v1&quot;
 </code></pre>
-<h2 id="11-implement-the-ghost-operator-logic-part-3---service"><a class="header" href="#11-implement-the-ghost-operator-logic-part-3---service">11. Implement the Ghost Operator Logic, Part 3 - Service</a></h2>
+<h2 id="11-implement-the-ghost-operator-logic-part-4---service"><a class="header" href="#11-implement-the-ghost-operator-logic-part-4---service">11. Implement the Ghost Operator Logic, Part 4 - Service</a></h2>
 <p>And Lastly we need to add a service for our deployment. For now let's choose a service of type <code>NodePort</code></p>
 <pre><code class="language-yaml">apiVersion: v1
 kind: Service
