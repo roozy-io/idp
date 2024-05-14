@@ -188,7 +188,7 @@
 <p>Extension Points <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
 <img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%"></p>
 </blockquote>
-<h2 id="in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api"><a class="header" href="#in-this-tutorial-we-will-be-focusing-on-extension-point-2-kubernetes-api">In this tutorial we will be focusing on extension point 2 (Kubernetes API).</a></h2>
+<h2 id="1-a-look-into-custom-resource-definition-crd-api"><a class="header" href="#1-a-look-into-custom-resource-definition-crd-api">1. A Look into Custom Resource Definition (CRD) API</a></h2>
 <table><thead><tr><th>Declarative APIs</th><th>Imperative APIs</th></tr></thead><tbody>
 <tr><td>Your API consists of a relatively small number of relatively small objects (resources).</td><td>The client says &quot;do this&quot;, and then gets a synchronous response back when it is done.</td></tr>
 <tr><td>The objects define configuration of applications or infrastructure.</td><td>The client says &quot;do this&quot;, and then gets an operation ID back, and has to check a separate Operation object to determine completion of the request.</td></tr>
@@ -301,9 +301,9 @@ kubectl exec etcd-kind-control-plane -n kube-system -- sh -c &quot;ETCDCTL_API=3
 <p>Delete custom resource </p>
 <pre><code class="language-shell">kubectl delete CronTab my-new-cron-object
 </code></pre>
-<p>//TODO: add some text  why we need kubebuilder and what is an operator application and the relationship between a controller and an operator etc.
-let's start by installing kubebuilder
-//TODO: add kubebuilder to the killercoda</p>
+<p>//TODO: add some text  why we need kubebuilder and what is an operator application and the relationship between a controller and an operator etc.</p>
+<h2 id="2-install-kubebuilder-and-create-a-new-project"><a class="header" href="#2-install-kubebuilder-and-create-a-new-project">2. Install Kubebuilder and Create a New Project</a></h2>
+<p>let's start by installing kubebuilder</p>
 <pre><code class="language-shell"># download kubebuilder and install locally.
 curl -L -o kubebuilder &quot;https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)&quot;
 chmod +x kubebuilder &amp;&amp; mv kubebuilder /usr/local/bin/
@@ -332,11 +332,10 @@ run: manifests generate fmt vet ## Run a controller from your host.
 <li><code>manifests</code> and <code>generate</code> which both have controller-gen as prerequisite and generate some golang code and yaml manifests </li>
 <li>the code is formatted by <code>fmt</code> </li>
 <li>validated by <code>vet</code> </li>
-<li>run will run the go application by refering to the application entrypoint at ./cmd/main.go </li>
+<li><code>run</code> will run the go application by refering to the application entrypoint at ./cmd/main.go </li>
 </ol>
 </blockquote>
-<h2 id="now-we-have-a-working-yet-empty-go-application"><a class="header" href="#now-we-have-a-working-yet-empty-go-application">Now we have a working yet empty go application.</a></h2>
-<p>let's add some meaningful code to it </p>
+<h2 id="3-create-our-first-api"><a class="header" href="#3-create-our-first-api">3. Create Our First API</a></h2>
 <p>Let's imagine we are a working at company where our colleagues are heavy users of the <code>ghost</code> blogging application.
 Our job is to provide them with ghost instances whenever and whereever they want it. We are infra gurus and through years of
 experience have learned that building an automation for such a task can save us a lot of toil and manual labor.</p>
@@ -369,7 +368,6 @@ There is even a helpful comment above the field describing the use of foo.</p>
 </code></pre>
 <p>you will find the generated crd at <code>config/crd/bases/blog.example.com_ghosts.yaml</code>
 see how kubebuilder did all the heavylifting we had to previously do for the crontab example! lovely!</p>
-<h2 id="now-lets-install-the-crd-into-our-cluster"><a class="header" href="#now-lets-install-the-crd-into-our-cluster">Now let's install the CRD into our cluster</a></h2>
 <p>let's notice the difference by looking at our kubernetes crds</p>
 <pre><code class="language-shell">kubectl get crds
 </code></pre>
@@ -379,7 +377,7 @@ see how kubebuilder did all the heavylifting we had to previously do for the cro
 <p>and run the get the crds again</p>
 <pre><code class="language-shell">kubectl get crds
 </code></pre>
-<h2 id="a-look-into-kubebuilder-setup"><a class="header" href="#a-look-into-kubebuilder-setup">A look into kubebuilder setup</a></h2>
+<h2 id="4-a-look-into-kubebuilder-setup"><a class="header" href="#4-a-look-into-kubebuilder-setup">4. A look into kubebuilder setup</a></h2>
 <p>When you selected to create a operator along with the <code>Ghost</code> Resource, Kubebuilder took care of some key setup:</p>
 <ol>
 <li>Starts the operator process during application boot</li>
@@ -399,7 +397,7 @@ see how kubebuilder did all the heavylifting we had to previously do for the cro
 <p>Navigate to <code>internal/controller/ghost_controller.go:58</code> to view this function. 
 It is already configured to know about the CRD <code>api/v1/ghost_types.go</code> or the generated yaml represenation at <code>crd/bases/blog.example.com_ghosts</code>.</p>
 <p>The most important function inside the controller is the <code>Reconcile</code> function <code>internal/controller/ghost_controller.go:49</code>.  Reconcile is part of the main kubernetes reconciliation loop which aims to move the current state of the cluster closer to the desired state. It is triggered anytime we change the cluster state related to our custom resource <code>internal/controller/ghost_controller.go:49</code>.</p>
-<h2 id="add-some-logging-to-the-reconcile-function"><a class="header" href="#add-some-logging-to-the-reconcile-function">add some logging to the reconcile function</a></h2>
+<h2 id="5-add-some-logging-to-the-reconcile-function"><a class="header" href="#5-add-some-logging-to-the-reconcile-function">5. Add Some Logging to the Reconcile Function</a></h2>
 <p>let's add some logs to the reconcile function and run the operator application and change the state of the cluster.
 let's paste this code into the <code>Reconcile</code> function. </p>
 <pre><code class="language-go">log := log.FromContext(ctx)
@@ -431,8 +429,8 @@ INFO    Reconciliation complete
 <pre><code class="language-shell">kubectl delete -f config/samples/blog_v1_ghost.yaml
 </code></pre>
 <p>Same logs showed up again. So basically <em>anytime</em> you interact with your <code>Ghost</code> resource a new event is triggered and your controller will print the logs. </p>
-<h2 id="implementing-the-desire-state-of-the-ghost-operator"><a class="header" href="#implementing-the-desire-state-of-the-ghost-operator">implementing the desire state of the ghost operator</a></h2>
-<p>Ok, now let's replace the default GhostSpec with a meaningful declartion of our desired state. Meaning we want our custom resource reflect the desired state for our Ghost application.</p>
+<h2 id="6-implement-the-desired-state-of-the-ghost-operator"><a class="header" href="#6-implement-the-desired-state-of-the-ghost-operator">6. Implement the Desired State of the Ghost Operator</a></h2>
+<p>Now let us replace the default GhostSpec with a meaningful declartion of our desired state. Meaning we want our custom resource reflect the desired state for our Ghost application.</p>
 <p>replace GhostSpec <code>api/v1/ghost_types.go:27</code> with the following snippet</p>
 <pre><code class="language-go">type GhostSpec struct {
 	//+kubebuilder:validation:Pattern=`^[-a-z0-9]*$`
@@ -469,7 +467,7 @@ If <code>omitempty</code> is used in a json tag, that field will be marked as <c
   }
 }
 </code></pre>
-<h2 id="accessing-the-custom-resource-inside-the-reconcile-function"><a class="header" href="#accessing-the-custom-resource-inside-the-reconcile-function">accessing the custom resource inside the reconcile function</a></h2>
+<h2 id="7-access-the-custom-resource-inside-the-reconcile-function"><a class="header" href="#7-access-the-custom-resource-inside-the-reconcile-function">7. Access the Custom Resource Inside the Reconcile Function</a></h2>
 <p>now let's try to access our custom resource in the <code>reconcile</code> function. 
 first off, let us reflect our new fields in our cutom resource.
 let us replace <code>config/samples/blog_v1_ghost.yaml</code> with the following</p>
@@ -513,7 +511,7 @@ line 3 tries to read a ghost instance from the reconciler client. Please note th
 INFO    Reconciliation complete {&quot;controller&quot;: &quot;ghost&quot;, &quot;controllerGroup&quot;: &quot;blog.example.com&quot;, &quot;controllerKind&quot;: &quot;Ghost&quot;, &quot;Ghost&quot;: {&quot;name&quot;:&quot;ghost-sample&quot;,&quot;namespace&quot;:&quot;marketing&quot;}, &quot;namespace&quot;: &quot;marketing&quot;, &quot;name&quot;: &quot;ghost-sample&quot;, &quot;reconcileID&quot;: &quot;9faf1c4f-6dcf-42d5-9f16-fbebb453b4ed&quot;}
 </code></pre>
 <p>cool! next stop, we will implement the actual controller logic for our ghost operator.</p>
-<h2 id="implementing-the-ghost-operator-logic-part-1---pvc"><a class="header" href="#implementing-the-ghost-operator-logic-part-1---pvc">implementing the ghost operator logic, part 1 - PVC</a></h2>
+<h2 id="8-implement-the-ghost-operator-logic-part-1---pvc"><a class="header" href="#8-implement-the-ghost-operator-logic-part-1---pvc">8. Implement the Ghost Operator Logic, Part 1 - PVC</a></h2>
 <p>Before we start coding the ghost operator, we need to know what resources we need in order to deploy ghost to our cluster. let's consult the docker hub page for ghost. https://hub.docker.com/_/ghost</p>
 <p>As we would like to persist ghost data to a persistent volume, we can try to convert this docker command to a k8s deployment. </p>
 <pre><code class="language-shell">docker run -d \
@@ -625,7 +623,7 @@ const svcNamePrefix = &quot;ghost-service-&quot;
 </code></pre>
 <p>right after our <code>GhostReconciler</code> struct. (around line 40).
 The <code>addPvcIfNotExists</code> function, checks whether the <code>pvc</code> is already created and if not, it will create it in the right namespace.</p>
-<h2 id="implmenting-the-ghost-operator-logic-part-2---rbac"><a class="header" href="#implmenting-the-ghost-operator-logic-part-2---rbac">implmenting the ghost operator logic, part 2 - RBAC</a></h2>
+<h2 id="9-implement-the-ghost-operator-logic-part-2---rbac"><a class="header" href="#9-implement-the-ghost-operator-logic-part-2---rbac">9. Implement the Ghost Operator Logic, Part 2 - RBAC</a></h2>
 <p>Next, we need to specify the kubebuilder markers for RBAC. After we created our apis there are 3 markers generated by default.</p>
 <pre><code class="language-go">//+kubebuilder:rbac:groups=blog.example.com,resources=ghosts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=blog.example.com,resources=ghosts/status,verbs=get;update;patch
@@ -642,7 +640,7 @@ To generate RBAC manfiests, we can run</p>
 <pre><code class="language-shell">make manifests
 </code></pre>
 <p>The generated manifest for the manager cluster role, will be generated at <code>config/rbac/role.yaml</code></p>
-<h2 id="implementing-the-ghost-operator-logic-part-3---deployment"><a class="header" href="#implementing-the-ghost-operator-logic-part-3---deployment">implementing the ghost operator logic, part 3 - Deployment</a></h2>
+<h2 id="10-implement-the-ghost-operator-logic-part-2---deployment"><a class="header" href="#10-implement-the-ghost-operator-logic-part-2---deployment">10. Implement the Ghost Operator Logic, Part 2 - Deployment</a></h2>
 <p>Next, we add the deployment create and update logic to our controller. For that we copy the following snippet to our controller.
 The logic is very similar to the previous snippet. However there is one key difference and that is that <code>addOrUpdateDeployment</code> can also update a deployment in case the deployed <code>imageTag</code> for the ghost image is different from the one coming from the <code>ghost.Spec</code> aka. desired state.</p>
 <pre><code class="language-go">func (r *GhostReconciler) addOrUpdateDeployment(ctx context.Context, ghost *blogv1.Ghost) error {
@@ -761,7 +759,7 @@ func generateDesiredDeployment(ghost *blogv1.Ghost) *appsv1.Deployment {
 <p>Let's make sure <code>apps/v1</code> import statement is added to the import section.</p>
 <pre><code class="language-go">appsv1 &quot;k8s.io/api/apps/v1&quot;
 </code></pre>
-<h2 id="implementing-the-ghost-operator-logic-part-4---service"><a class="header" href="#implementing-the-ghost-operator-logic-part-4---service">implementing the ghost operator logic, part 4 - Service</a></h2>
+<h2 id="11-implement-the-ghost-operator-logic-part-3---service"><a class="header" href="#11-implement-the-ghost-operator-logic-part-3---service">11. Implement the Ghost Operator Logic, Part 3 - Service</a></h2>
 <p>And Lastly we need to add a service for our deployment. For now let's choose a service of type <code>NodePort</code></p>
 <pre><code class="language-yaml">apiVersion: v1
 kind: Service
@@ -826,29 +824,7 @@ func generateDesiredService(ghost *blogv1.Ghost) *corev1.Service {
 	}
 }
 </code></pre>
-<h2 id="run-vscode-debuggger-and-modify-launchjson"><a class="header" href="#run-vscode-debuggger-and-modify-launchjson">Run vscode debuggger and modify launch.json</a></h2>
-<p>Being able to run our operator application in debug mode is definitely a nice thing. 
-Fortutanly we can simply do this on vscode. Let's click on the <code>create a launch.json file</code> in the <code>Run and Debug</code>.
-<img src="../assets/launchjson.png" alt="vscode run and debug" width="70%"></p>
-<p>Next we select <code>Go</code> and <code>Go Launch Package</code>. In the generated json file we need to adjust the program argument and set it to the 
-main.go file of our application which is at <code>cmd/main.go</code>.</p>
-<pre><code class="language-json">{
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    &quot;version&quot;: &quot;0.2.0&quot;,
-    &quot;configurations&quot;: [
-        {
-            &quot;name&quot;: &quot;Launch Package&quot;,
-            &quot;type&quot;: &quot;go&quot;,
-            &quot;request&quot;: &quot;launch&quot;,
-            &quot;mode&quot;: &quot;auto&quot;,
-            &quot;program&quot;: &quot;${fileDirname}/cmd/main.go&quot;
-        }
-    ]
-}
-</code></pre>
-<h2 id="using-our-functions-in-the-reconcile-loop"><a class="header" href="#using-our-functions-in-the-reconcile-loop">Using our functions in the reconcile loop.</a></h2>
+<h2 id="12-implement-the-final-logic-of-the-reconcile-function"><a class="header" href="#12-implement-the-final-logic-of-the-reconcile-function">12. Implement the Final Logic of the Reconcile Function</a></h2>
 <p>Next we need to call our function in our reconcile function. We start by calling the functions we added one by one. 
 In case there is an error we update the status of our ghost deployment. For that, we need to make a couple of adjustments first.
 First we replace <code>GhostStatus</code> in <code>api/v1/ghost_types.go</code> with the following</p>
@@ -958,7 +934,7 @@ We can perform a portforward on the service to see our ghost application in a br
 Let's have a look at our ghost resource as well.</p>
 <pre><code class="language-shell">kubectl describe -n marketing ghosts.blog.example.com ghost-sample
 </code></pre>
-<h2 id="updating-the-ghost-resource"><a class="header" href="#updating-the-ghost-resource">Updating the ghost resource</a></h2>
+<h2 id="13-update-the-ghost-resource"><a class="header" href="#13-update-the-ghost-resource">13. Update the Ghost Resource</a></h2>
 <p>let us perform an update on our resource and use the <code>alpine</code> image tag instead of <code>latest</code>.
 So, let us replace <code>config/samples/blog_v1_ghost.yaml</code> with the following and apply it.</p>
 <pre><code class="language-yaml">apiVersion: blog.example.com/v1
@@ -972,7 +948,7 @@ spec:
 <pre><code class="language-shell">kubectl apply -f config/samples/blog_v1_ghost.yaml
 </code></pre>
 <p>We can see that our deployment subresource is being updated and the update logs are showing up in the console. We can confirm this by inspecting the deployment in <code>k9s</code>.</p>
-<h2 id="deleting-the-ghost-resource"><a class="header" href="#deleting-the-ghost-resource">Deleting the ghost resource</a></h2>
+<h2 id="14-deleting-the-ghost-resource"><a class="header" href="#14-deleting-the-ghost-resource">14. Deleting the ghost resource</a></h2>
 <p>If perform a delete operation on our resource, all the subresouces will be deleted too, as we set their owner to be the ghost resource.
 Please notice the <code>controllerutil.SetControllerReference</code> usage, before creating the subresources.</p>
 <p>Let us perform the delete and see the effect.</p>
@@ -981,7 +957,7 @@ Please notice the <code>controllerutil.SetControllerReference</code> usage, befo
 <p>We can see all the subresources are deleted.</p>
 <pre><code class="language-shell">kubectl get all -n marketing
 </code></pre>
-<h2 id="deploying-the-operator-to-kubernetes"><a class="header" href="#deploying-the-operator-to-kubernetes">Deploying the Operator to Kubernetes</a></h2>
+<h2 id="15-deploy-ghost-operator-to-the-cluster"><a class="header" href="#15-deploy-ghost-operator-to-the-cluster">15. Deploy Ghost Operator to the Cluster</a></h2>
 <p>Your operator is an application, so it needs to be packaged as a OCI compliant container image just like any other container you want to deploy.</p>
 <p>We need to run the right make command to build our OCI image and then Deploy it.</p>
 <p>Build</p>
@@ -1001,6 +977,27 @@ make docker-build
 <p>And we can look around and inspect the logs of our manager when we CRUD operations with our ghost API.</p>
 <pre><code class="language-shell">kubectl get all -n ghost-operator-system
 </code></pre>
+<h2 id="16-bonus-setup-vscode-debugger"><a class="header" href="#16-bonus-setup-vscode-debugger">16. [Bonus] Setup VSCode Debugger</a></h2>
+<p>Being able to run our operator application in debug mode is definitely a nice thing. 
+Fortutanly we can simply do this on vscode. Let's click on the <code>create a launch.json file</code> in the <code>Run and Debug</code>.
+<img src="../assets/launchjson.png" alt="vscode run and debug" width="70%"></p>
+<p>Next we select <code>Go</code> and <code>Go Launch Package</code>. In the generated json file we need to adjust the program argument and set it to the 
+main.go file of our application which is at <code>cmd/main.go</code>.</p>
+<pre><code class="language-json">{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+        {
+            &quot;name&quot;: &quot;Launch Package&quot;,
+            &quot;type&quot;: &quot;go&quot;,
+            &quot;request&quot;: &quot;launch&quot;,
+            &quot;mode&quot;: &quot;auto&quot;,
+            &quot;program&quot;: &quot;${fileDirname}/cmd/main.go&quot;
+        }
+    ]
+}</code></pre>
 
                     </main>
 
