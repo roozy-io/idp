@@ -171,16 +171,18 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="a-crash-course-on-extending-kubernetes---kubebuilder-2024---3140"><a class="header" href="#a-crash-course-on-extending-kubernetes---kubebuilder-2024---3140">A Crash Course on Extending Kubernetes - Kubebuilder 2024 - 3.14.0.</a></h1>
-<h1 id="links"><a class="header" href="#links">Links</a></h1>
-<ul>
+<h2 id="links"><a class="header" href="#links">Links</a></h2>
+<ol>
 <li><a href="https://www.youtube.com/watch?v=">Video by Shahrooz Aghili</a></li>
 <li><a href="https://killercoda.com/aghilish/scenario/extending_k8s">Killercoda Hands-on Lab</a></li>
-</ul>
-<h1 id="learning-resources"><a class="header" href="#learning-resources">Learning Resources</a></h1>
+</ol>
+<h2 id="learning-resources"><a class="header" href="#learning-resources">Learning Resources</a></h2>
 <ol>
 <li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/">Kubernetes Docs</a></li>
 <li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/">Custom Resources</a></li>
 <li><a href="https://kubebuilder.io">Kubebuilder Docs</a></li>
+<li><a href="https://github.com/cncf/tag-app-delivery/blob/163962c4b1cd70d085107fc579e3e04c2e14d59c/operator-wg/whitepaper/Operator-WhitePaper_v1-0.md">Operator Whitepaper</a></li>
+<li><a href="https://operatorframework.io/operator-capabilities/">Operator Capability Levels</a></li>
 </ol>
 <h1 id="notes"><a class="header" href="#notes">Notes</a></h1>
 <blockquote>
@@ -190,7 +192,6 @@
 <p>Extension Points <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
 <img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%"></p>
 </blockquote>
-<h2 id="1-a-look-into-custom-resource-definition-crd-api"><a class="header" href="#1-a-look-into-custom-resource-definition-crd-api">1. A Look into Custom Resource Definition (CRD) API</a></h2>
 <table><thead><tr><th>Declarative APIs</th><th>Imperative APIs</th></tr></thead><tbody>
 <tr><td>Your API consists of a relatively small number of relatively small objects (resources).</td><td>The client says &quot;do this&quot;, and then gets a synchronous response back when it is done.</td></tr>
 <tr><td>The objects define configuration of applications or infrastructure.</td><td>The client says &quot;do this&quot;, and then gets an operation ID back, and has to check a separate Operation object to determine completion of the request.</td></tr>
@@ -208,6 +209,14 @@
 <blockquote>
 <p>There is a specific pattern for writing client programs that work well with Kubernetes called the controller pattern. Controllers typically read an object's <code>.spec</code>, possibly do things, and then update the object's <code>.status</code>.</p>
 </blockquote>
+<blockquote>
+<p>“An operator is a Kubernetes controller that understands 2 domains: Kubernetes and something else. By combining knowledge of both domains, it can automate tasks that usually require a human operator that understands both domains”* (Jimmy Zelinskie, https://github.com/kubeflow/tf-operator/issues/300#issuecomment-357527937)</p>
+</blockquote>
+<img src="../assets/02_2_operator.png" alt="Operator Big Picture" width="100%">
+<img src="../assets/02_1_operator_pattern.png" alt="Operator Pattern" width="100%">
+<figcaption>Images from the Operator Whitepaper</figcaption>
+<h2 id="1-a-look-into-custom-resource-definition-crd-api"><a class="header" href="#1-a-look-into-custom-resource-definition-crd-api">1. A Look into Custom Resource Definition (CRD) API</a></h2>
+<p>We need a test cluster. Kind is a good option.</p>
 <pre><code class="language-shell">kind create cluster
 </code></pre>
 <p>let's start by using the <code>custom resource definition</code> api of kubernetes. 
@@ -303,7 +312,6 @@ kubectl exec etcd-kind-control-plane -n kube-system -- sh -c &quot;ETCDCTL_API=3
 <p>Delete custom resource </p>
 <pre><code class="language-shell">kubectl delete CronTab my-new-cron-object
 </code></pre>
-<p>//TODO: add some text  why we need kubebuilder and what is an operator application and the relationship between a controller and an operator etc.</p>
 <h2 id="2-install-kubebuilder-and-create-a-new-project"><a class="header" href="#2-install-kubebuilder-and-create-a-new-project">2. Install Kubebuilder and Create a New Project</a></h2>
 <p>let's start by installing kubebuilder</p>
 <pre><code class="language-shell"># download kubebuilder and install locally.
