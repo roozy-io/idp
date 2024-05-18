@@ -1,14 +1,17 @@
 # A Crash Course on Extending Kubernetes - Kubebuilder 2024 - 3.14.0.
 
-# Links
-* [Video by Shahrooz Aghili](https://www.youtube.com/watch?v=)
-* [Killercoda Hands-on Lab](https://killercoda.com/aghilish/scenario/extending_k8s)
+## Links
 
-# Learning Resources
+1. [Video by Shahrooz Aghili](https://www.youtube.com/watch?v=)
+2. [Killercoda Hands-on Lab](https://killercoda.com/aghilish/scenario/extending_k8s)
+
+## Learning Resources
 
 1. [Kubernetes Docs](https://kubernetes.io/docs/concepts/extend-kubernetes/)
 2. [Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
 3. [Kubebuilder Docs](https://kubebuilder.io)
+4. [Operator Whitepaper](https://github.com/cncf/tag-app-delivery/blob/163962c4b1cd70d085107fc579e3e04c2e14d59c/operator-wg/whitepaper/Operator-WhitePaper_v1-0.md)
+5. [Operator Capability Levels](https://operatorframework.io/operator-capabilities/)
 
 # Notes
 
@@ -16,8 +19,6 @@
 
 > Extension Points [Details](https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure)
 <img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%">
-
-## 1. A Look into Custom Resource Definition (CRD) API
 
 | Declarative APIs | Imperative APIs |
 |-----------------|-----------------|
@@ -35,9 +36,15 @@
 
 > There is a specific pattern for writing client programs that work well with Kubernetes called the controller pattern. Controllers typically read an object's `.spec`, possibly do things, and then update the object's `.status`.
 
+> “An operator is a Kubernetes controller that understands 2 domains: Kubernetes and something else. By combining knowledge of both domains, it can automate tasks that usually require a human operator that understands both domains”* (Jimmy Zelinskie, https://github.com/kubeflow/tf-operator/issues/300#issuecomment-357527937)
 
+<img src="../assets/02_2_operator.png" alt="Operator Big Picture" width="100%">
+<img src="../assets/02_1_operator_pattern.png" alt="Operator Pattern" width="100%">
+<figcaption>Images from the Operator Whitepaper</figcaption>
 
+## 1. A Look into Custom Resource Definition (CRD) API
 
+We need a test cluster. Kind is a good option.
 ```shell
 kind create cluster
 ```
@@ -153,8 +160,6 @@ Delete custom resource
 ```shell
 kubectl delete CronTab my-new-cron-object
 ```
-
-//TODO: add some text  why we need kubebuilder and what is an operator application and the relationship between a controller and an operator etc.
 
 ## 2. Install Kubebuilder and Create a New Project
 
