@@ -2,7 +2,7 @@
 
 ## Links
 
-1. [Video by Shahrooz Aghili](https://www.youtube.com/watch?v=)
+1. [Video by Shahrooz Aghili](https://youtu.be/azJsyLjvHsI)
 2. [Killercoda Hands-on Lab](https://killercoda.com/aghilish/scenario/extending_k8s)
 
 ## Learning Resources
