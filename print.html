@@ -4215,7 +4215,7 @@ func (r *GhostReconciler) updateStatus(ctx context.Context, ghost *blogv1.Ghost)
 <pre><code class="language-shell">make run
 </code></pre>
 <p>we can see the logs and see that our operator application is up and running, 
-in another termainl we create a ghost resource.</p>
+in another terminal we create a ghost resource.</p>
 <pre><code class="language-shell">kubectl create namespace marketing
 kubectl apply -f config/samples/blog_v1_ghost.yaml
 </code></pre>
@@ -4239,7 +4239,7 @@ spec:
 </code></pre>
 <p>We can see that our deployment subresource is being updated and the update logs are showing up in the console. We can confirm this by inspecting the deployment in <code>k9s</code>.</p>
 <h2 id="14-deleting-the-ghost-resource"><a class="header" href="#14-deleting-the-ghost-resource">14. Deleting the ghost resource</a></h2>
-<p>If perform a delete operation on our resource, all the subresouces will be deleted too, as we set their owner to be the ghost resource.
+<p>If we perform a delete operation on our resource, all the subresouces will be deleted too, as we set their owner to be the ghost resource.
 Please notice the <code>controllerutil.SetControllerReference</code> usage, before creating the subresources.</p>
 <p>Let us perform the delete and see the effect.</p>
 <pre><code class="language-shell">kubectl delete ghosts.blog.example.com -n marketing ghost-sample
