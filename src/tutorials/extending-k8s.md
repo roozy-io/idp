@@ -912,7 +912,7 @@ make run
 ```
 
 we can see the logs and see that our operator application is up and running, 
-in another termainl we create a ghost resource.
+in another terminal we create a ghost resource.
 
 ```shell
 kubectl create namespace marketing
@@ -947,7 +947,7 @@ kubectl apply -f config/samples/blog_v1_ghost.yaml
 We can see that our deployment subresource is being updated and the update logs are showing up in the console. We can confirm this by inspecting the deployment in `k9s`.
 
 ## 14. Deleting the ghost resource
-If perform a delete operation on our resource, all the subresouces will be deleted too, as we set their owner to be the ghost resource.
+If we perform a delete operation on our resource, all the subresouces will be deleted too, as we set their owner to be the ghost resource.
 Please notice the `controllerutil.SetControllerReference` usage, before creating the subresources.
 
 Let us perform the delete and see the effect.
