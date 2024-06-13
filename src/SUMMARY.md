@@ -66,6 +66,7 @@
 # Tutorials and Practice
 
 - [Extending Kubernetes](./tutorials/extending-k8s.md)
+- [Kubernetes Webhooks](./tutorials/k8s-webhooks.md)
 - [Serverless](./tutorials/serverless.md)
 - [Ingress from scratch](./tutorials/ingress-from-scratch.md)
 - [Istio from scratch](./tutorials/istio-from-scratch.md)
