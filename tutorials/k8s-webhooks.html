@@ -182,17 +182,184 @@
 <li><a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">Dynamic Admission Controllers</a></li>
 <li><a href="https://kubebuilder.io/cronjob-tutorial/webhook-implementation">Kubebuilder Docs</a></li>
 </ol>
-<h1 id="notes"><a class="header" href="#notes">Notes</a></h1>
+<h2 id="what-are-admission-controllers"><a class="header" href="#what-are-admission-controllers">What are Admission Controllers</a></h2>
 <blockquote>
-<p>Kubernetes is highly configurable and extensible. As a result, there is rarely a need to fork or submit patches to the Kubernetes project code.</p>
+<p>An admission controller is a piece of code that intercepts requests to the Kubernetes API server prior to persistence of the object, but after the request is authenticated and authorized. Admission controllers may be validating, mutating, or both. Mutating controllers may modify objects related to the requests they admit; validating controllers may not. Admission controllers limit requests to create, delete, modify objects. Admission controllers do not (and cannot) block requests to read (get, watch or list) objects. </p>
+</blockquote>
+<blockquote>
+<p>The admission controllers in Kubernetes 1.30 consist of the list below, are compiled into the kube-apiserver binary, and may only be configured by the cluster administrator.</p>
+</blockquote>
+<h2 id="why-do-we-need-them-"><a class="header" href="#why-do-we-need-them-">Why do we need them ?</a></h2>
+<blockquote>
+<p>Why do I need them? Several important features of Kubernetes require an admission controller to be enabled in order to properly support the feature. As a result, a Kubernetes API server that is not properly configured with the right set of admission controllers is an incomplete server and will not support all the features you expect.</p>
+</blockquote>
+<h2 id="how-can-we-turn-them-on-"><a class="header" href="#how-can-we-turn-them-on-">How can we turn them on ?</a></h2>
+<pre><code class="language-bash">kube-apiserver --enable-admission-plugins=NamespaceLifecycle,LimitRanger ...
+</code></pre>
+<h2 id="which-ones-are-enabled-by-default-"><a class="header" href="#which-ones-are-enabled-by-default-">Which ones are enabled by default ?</a></h2>
+<pre><code class="language-bash"># to get the list we can run 
+kube-apiserver -h | grep enable-admission-plugins
+# these are enabled by default
+
+#CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, LimitRanger, MutatingAdmissionWebhook, NamespaceLifecycle, PersistentVolumeClaimResize, PodSecurity, Priority, ResourceQuota, RuntimeClass, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionPolicy, ValidatingAdmissionWebhook
+
+</code></pre>
+<h2 id="dynamic-admission-control"><a class="header" href="#dynamic-admission-control">Dynamic Admission Control</a></h2>
+<blockquote>
+<p>In addition to compiled-in admission plugins, admission plugins can be developed as extensions and run as webhooks configured at runtime. This page describes how to build, configure, use, and monitor admission webhooks.</p>
+</blockquote>
+<h2 id="what-are-admission-webhooks"><a class="header" href="#what-are-admission-webhooks">What are Admission Webhooks</a></h2>
+<blockquote>
+<p>Admission webhooks are HTTP callbacks that receive admission requests and do something with them. You can define two types of admission webhooks, validating admission webhook and mutating admission webhook. Mutating admission webhooks are invoked first, and can modify objects sent to the API server to enforce custom defaults. After all object modifications are complete, and after the incoming object is validated by the API server, validating admission webhooks are invoked and can reject requests to enforce custom policies.</p>
+</blockquote>
+<blockquote>
+<p>Create a figure for admission webhook request (admission review)
+Create a figure for admission webhook response (admission review)
+Admission Webhooks can run inside or outside the cluster. If We deploy them inside the cluster, we can leverage cert manager for automatically inject certificate</p>
 </blockquote>
 <blockquote>
 <p>Admission Controllers <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
 <img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%"></p>
 </blockquote>
-<h2 id="1-a-look-into-custom-resource-definition-crd-api"><a class="header" href="#1-a-look-into-custom-resource-definition-crd-api">1. A Look into Custom Resource Definition (CRD) API</a></h2>
+<h2 id="todo-after-deploying-a-webhook-lets-create-an-object-where-the-admission-webhook-validating-and-mutating-is-called-and-inspect-the-logs-of-the-kube-api-server-or-look-at-the-etcd-for-the-admission-review-request-and-respons"><a class="header" href="#todo-after-deploying-a-webhook-lets-create-an-object-where-the-admission-webhook-validating-and-mutating-is-called-and-inspect-the-logs-of-the-kube-api-server-or-look-at-the-etcd-for-the-admission-review-request-and-respons">TODO: after deploying a webhook, let's create an object where the admission webhook (validating and mutating is called) and inspect the logs of the kube-api server or look at the etcd for the admission review request and respons</a></h2>
+<h2 id="1-create-a-webhook-for-our-operator"><a class="header" href="#1-create-a-webhook-for-our-operator">1. Create a webhook for our operator</a></h2>
 <p>We need a test cluster. Kind is a good option.</p>
 <pre><code class="language-shell">kind create cluster
+</code></pre>
+<p>let's pick up where we left off last time by cloning into our ghost operator tutorial.</p>
+<pre><code class="language-bash">git clone https://github.com/aghilish/operator-tutorial.git
+cd operator-tutorial
+</code></pre>
+<p>let's create our first webhook</p>
+<pre><code class="language-bash">kubebuilder create webhook --kind Ghost --group blog --version v1 --defaulting --programmatic-validation
+</code></pre>
+<p>Let's have a look at the <code>api/v1/ghost_webhook.go</code> file, you should notice that some boilerplate code was generated for us to implement Mutating and Validating webhook logic.</p>
+<p>Next we are gonna add a new field to our ghost spec called <code>replicas</code>. As you might have guessed this field is there to set the number of replicas on the managed deployment resource which we set on our ghost resource.</p>
+<p>ok let's add the following line to our <code>GhostSpec</code> struct <code>api/v1/ghost_types.go:30</code>.</p>
+<pre><code class="language-go">//+kubebuilder:validation:Minimum=1
+Replicas int32 `json:&quot;replicas&quot;`
+</code></pre>
+<p>Please note the kubebuilder marker. It validates the replicas value to be at least 1. But it's an optional value.
+This validation marker will then translate into our custom resource definition. This type of validation is called declarartive validation.
+With <code>Validating Admission Webhooks</code> we can validate our resources in a programmatic way meaning the webhook can return errors with custome messages if programmatic validation fails. In our <code>Mutating Validation Webhook</code> we can mutate our resource or set a default for replias if nothing is set on the custom resource manifest. </p>
+<h2 id="2-update-controller"><a class="header" href="#2-update-controller">2. Update controller</a></h2>
+<p>Before we implement the validation logic let us handle the new replicas field in our controller.</p>
+<p>let's render new manifests first</p>
+<pre><code class="language-bash">make manifests
+</code></pre>
+<p>Now are CRD is updated.</p>
+<p>and update our controller as follows.
+Update <code>generateDesiredDeployment</code> at <code>internal/controller/ghost_controller.go:243</code></p>
+<p>with the following</p>
+<pre><code class="language-go">replicas := ghost.Spec.Replicas
+</code></pre>
+<p>and the update condition at <code>addOrUpdateDeployment</code> at <code>internal/controller/ghost_controller.go:243</code></p>
+<pre><code class="language-go">existingDeployment.Spec.Template.Spec.Containers[0].Image != desiredDeployment.Spec.Template.Spec.Containers[0].Image ||
+			*existingDeployment.Spec.Replicas != *desiredDeployment.Spec.Replicas
+</code></pre>
+<p>and let's make sure we don't have any build error by running </p>
+<pre><code class="language-bash">make
+</code></pre>
+<h2 id="3-implement-webhook-logic"><a class="header" href="#3-implement-webhook-logic">3. Implement Webhook Logic</a></h2>
+<p>Next we are gonna add a defaulting and validating logic to our admission webhook. If the replicas is set to 0 we set it to 2 and if during create or update the replicas is set to a value bigger than 5 the validation fails. let's replace the content of our webhook at <code>api/v1/ghost_webhook.go</code> with the following.</p>
+<pre><code class="language-go">package v1
+
+import (
+	&quot;fmt&quot;
+
+	&quot;k8s.io/apimachinery/pkg/runtime&quot;
+	ctrl &quot;sigs.k8s.io/controller-runtime&quot;
+	logf &quot;sigs.k8s.io/controller-runtime/pkg/log&quot;
+	&quot;sigs.k8s.io/controller-runtime/pkg/webhook&quot;
+	&quot;sigs.k8s.io/controller-runtime/pkg/webhook/admission&quot;
+)
+
+// log is for logging in this package.
+var ghostlog = logf.Log.WithName(&quot;ghost-resource&quot;)
+
+// SetupWebhookWithManager will setup the manager to manage the webhooks
+func (r *Ghost) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).
+		Complete()
+}
+
+// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+
+//+kubebuilder:webhook:path=/mutate-blog-example-com-v1-ghost,mutating=true,failurePolicy=fail,sideEffects=None,groups=blog.example.com,resources=ghosts,verbs=create;update,versions=v1,name=mghost.kb.io,admissionReviewVersions=v1
+
+var _ webhook.Defaulter = &amp;Ghost{}
+
+// Default implements webhook.Defaulter so a webhook will be registered for the type
+func (r *Ghost) Default() {
+	ghostlog.Info(&quot;default&quot;, &quot;name&quot;, r.Name)
+
+	if r.Spec.Replicas == 0 {
+		r.Spec.Replicas = 2
+	}
+}
+
+// TODO(user): change verbs to &quot;verbs=create;update;delete&quot; if you want to enable deletion validation.
+//+kubebuilder:webhook:path=/validate-blog-example-com-v1-ghost,mutating=false,failurePolicy=fail,sideEffects=None,groups=blog.example.com,resources=ghosts,verbs=create;update,versions=v1,name=vghost.kb.io,admissionReviewVersions=v1
+
+var _ webhook.Validator = &amp;Ghost{}
+
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+func (r *Ghost) ValidateCreate() (admission.Warnings, error) {
+	ghostlog.Info(&quot;validate create&quot;, &quot;name&quot;, r.Name)
+	return validateReplicas(r)
+}
+
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+func (r *Ghost) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	ghostlog.Info(&quot;validate update&quot;, &quot;name&quot;, r.Name)
+	return validateReplicas(r)
+}
+
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+func (r *Ghost) ValidateDelete() (admission.Warnings, error) {
+	ghostlog.Info(&quot;validate delete&quot;, &quot;name&quot;, r.Name)
+
+	// TODO(user): fill in your validation logic upon object deletion.
+	return nil, nil
+}
+
+func validateReplicas(r *Ghost) (admission.Warnings, error) {
+	if r.Spec.Replicas &gt; 5 {
+		return nil, fmt.Errorf(&quot;ghost replicas cannot be more than 5&quot;)
+	}
+	return nil, nil
+}
+
+</code></pre>
+<h2 id="4-deploy-webhook"><a class="header" href="#4-deploy-webhook">4. Deploy webhook</a></h2>
+<p>Once our webhook is implemented, all that’s left is to create the <code>WebhookConfiguration</code> manifests required to register our webhooks with Kubernetes. The connection between the kubernetes api and our webhook server needs to be secure and encrypted. This can easily happen if we use certmanager togehter with the powerful scaffolding of kubebuilder.</p>
+<p>We need to enable the cert-manager deployment via kubebuilder, in order to do that we should edit <code>config/default/kustomization.yaml</code> and <code>config/crd/kustomization.yaml</code> files by uncommenting the sections marked by [WEBHOOK] and [CERTMANAGER] comments.</p>
+<p>We also add a new target to our make file for installing cert-manager using a helm command.</p>
+<p>So let's add the following to the botton of our make file.</p>
+<pre><code class="language-bash">##@ Helm
+
+HELM_VERSION ?= v3.7.1
+
+.PHONY: helm
+helm: ## Download helm locally if necessary.
+ifeq (, $(shell which helm))
+        @{ \
+        set -e ;\
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash ;\
+        }
+endif
+
+.PHONY: install-cert-manager
+install-cert-manager: helm ## Install cert-manager using Helm.
+		helm repo add jetstack https://charts.jetstack.io
+		helm repo update
+		helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.15.0 --set crds.enabled=true
+
+.PHONY: uninstall-cert-manager
+uninstall-cert-manager: helm ## Uninstall cert-manager using Helm.
+		helm uninstall cert-manager --namespace cert-manager
+		kubectl delete namespace cert-manager
 </code></pre>
 
                     </main>
