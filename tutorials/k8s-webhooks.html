@@ -222,7 +222,7 @@ Admission Webhooks can run inside or outside the cluster. If We deploy them insi
 <img src="../assets/k8s-admission-control.png" alt="Dynamic Admission Control" width="100%"></p>
 </blockquote>
 <h1 id="redraw-the-image"><a class="header" href="#redraw-the-image">redraw the image</a></h1>
-<h2 id="1-create-a-webhook-for-our-operator"><a class="header" href="#1-create-a-webhook-for-our-operator">1. Create a webhook for our operator</a></h2>
+<h2 id="1-create-a-webhook-for-our-operator"><a class="header" href="#1-create-a-webhook-for-our-operator">1. Create a Webhook for Our Operator</a></h2>
 <p>We need a test cluster. Kind is a good option.</p>
 <pre><code class="language-shell">kind create cluster
 </code></pre>
@@ -242,7 +242,7 @@ Replicas int32 `json:&quot;replicas&quot;`
 <p>Please note the kubebuilder marker. It validates the replicas value to be at least 1. But it's an optional value.
 This validation marker will then translate into our custom resource definition. This type of validation is called declarartive validation.
 With <code>Validating Admission Webhooks</code> we can validate our resources in a programmatic way meaning the webhook can return errors with custome messages if programmatic validation fails. In our <code>Mutating Validation Webhook</code> we can mutate our resource or set a default for replias if nothing is set on the custom resource manifest. </p>
-<h2 id="2-update-controller"><a class="header" href="#2-update-controller">2. Update controller</a></h2>
+<h2 id="2-update-controller"><a class="header" href="#2-update-controller">2. Update Controller</a></h2>
 <p>Before we implement the validation logic let us handle the new replicas field in our controller.</p>
 <p>let's render new manifests first</p>
 <pre><code class="language-bash">make manifests
@@ -332,7 +332,7 @@ func validateReplicas(r *Ghost) (admission.Warnings, error) {
 }
 
 </code></pre>
-<h2 id="4-deploy-webhook"><a class="header" href="#4-deploy-webhook">4. Deploy webhook</a></h2>
+<h2 id="4-deploy-webhook"><a class="header" href="#4-deploy-webhook">4. Deploy Webhook</a></h2>
 <p>Once our webhook is implemented, all that’s left is to create the <code>WebhookConfiguration</code> manifests required to register our webhooks with Kubernetes. The connection between the kubernetes api and our webhook server needs to be secure and encrypted. This can easily happen if we use certmanager togehter with the powerful scaffolding of kubebuilder.</p>
 <p>We need to enable the cert-manager deployment via kubebuilder, in order to do that we should edit <code>config/default/kustomization.yaml</code> and <code>config/crd/kustomization.yaml</code> files by uncommenting the sections marked by [WEBHOOK] and [CERTMANAGER] comments.</p>
 <p>We also add a new target to our make file for installing cert-manager using a helm command.</p>
