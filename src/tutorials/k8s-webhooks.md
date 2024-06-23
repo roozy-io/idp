@@ -50,7 +50,7 @@ kube-apiserver -h | grep enable-admission-plugins
 
 # redraw the image
 
-## 1. Create a webhook for our operator
+## 1. Create a Webhook for Our Operator
 
 We need a test cluster. Kind is a good option.
 ```shell
@@ -83,7 +83,7 @@ This validation marker will then translate into our custom resource definition. 
 With `Validating Admission Webhooks` we can validate our resources in a programmatic way meaning the webhook can return errors with custome messages if programmatic validation fails. In our `Mutating Validation Webhook` we can mutate our resource or set a default for replias if nothing is set on the custom resource manifest. 
 
 
-## 2. Update controller
+## 2. Update Controller
 
 Before we implement the validation logic let us handle the new replicas field in our controller.
 
@@ -188,7 +188,7 @@ func validateReplicas(r *Ghost) (admission.Warnings, error) {
 
 ```
 
-## 4. Deploy webhook
+## 4. Deploy Webhook
 Once our webhook is implemented, all that’s left is to create the `WebhookConfiguration` manifests required to register our webhooks with Kubernetes. The connection between the kubernetes api and our webhook server needs to be secure and encrypted. This can easily happen if we use certmanager togehter with the powerful scaffolding of kubebuilder.
 
 We need to enable the cert-manager deployment via kubebuilder, in order to do that we should edit `config/default/kustomization.yaml` and `config/crd/kustomization.yaml` files by uncommenting the sections marked by [WEBHOOK] and [CERTMANAGER] comments.
