@@ -45,11 +45,10 @@ kube-apiserver -h | grep enable-admission-plugins
 > Admission Webhooks can run inside or outside the cluster. If We deploy them inside the cluster, we can leverage cert manager for automatically inject certificate
 
 
-> Admission Controllers [Details](https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure)
-<img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%">
+> Dynamic Admission Control [Details](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)
+<img src="../assets/k8s-admission-control.png" alt="Dynamic Admission Control" width="100%">
 
-## TODO: after deploying a webhook, let's create an object where the admission webhook (validating and mutating is called) and inspect the logs of the kube-api server or look at the etcd for the admission review request and respons
-
+# redraw the image
 
 ## 1. Create a webhook for our operator
 
@@ -278,7 +277,7 @@ operator-tutorial-validating-webhook-configuration   1          2m
 
 we see our webhook configurations as well as the ones that belong to cert-manager and are in charge of injecting the `caBunlde`
 into our webhook services.
-Awesome! everything is deployed. Now let's see if the admission webhook is working as web expect.
+Awesome! everything is deployed. Now let's see if the admission webhook is working as we expect.
 
 ## 5. Test Mutating Webhook
 
@@ -310,6 +309,8 @@ kubectl apply -f config/samples/blog_v1_ghost.yaml
 and check the number of replicas on the ghost resouce we see it is set to `2`.
 ```bash
 kubectl get ghosts.blog.example.com -n marketing ghost-sample -o jsonpath="{.spec.replicas}" | yq
+```
+```bash
 2
 ```
 let us check the number of replicas (pods) of our ghost deployment managed resource, to confirm that in action.
