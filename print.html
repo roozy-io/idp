@@ -4499,6 +4499,104 @@ uninstall-cert-manager: helm ## Uninstall cert-manager using Helm.
 		helm uninstall cert-manager --namespace cert-manager
 		kubectl delete namespace cert-manager
 </code></pre>
+<p>cool, now let's instal cert-manage on our cluster:</p>
+<pre><code class="language-bash">make install-cert-manager
+</code></pre>
+<p>and get the pods in the cert-manager to make sure they are running</p>
+<pre><code class="language-bash">kubectl get pods -n cert-manager
+</code></pre>
+<pre><code class="language-bash">NAME                                       READY   STATUS    RESTARTS   AGE
+cert-manager-cainjector-698464d9bb-vq96f   1/1     Running   0          2m
+cert-manager-d7db49bf4-q2gkc               1/1     Running   0          2m
+cert-manager-webhook-f6c9958d-jwhr2        1/1     Running   0          2m
+</code></pre>
+<p>awesome, now let us build our new controller image and deploy everything (controller and admission webhooks)
+to our cluster. Let us bump up our controller image tag to <code>v2</code>. </p>
+<pre><code class="language-bash">export IMG=c8n.io/aghilish/ghost-operator:v2
+make docker-build
+make docker-push
+make deploy
+</code></pre>
+<p>and check if our manager is running in the <code>opeator-turorial-system</code> namespace.</p>
+<pre><code class="language-bash">kubectl get pods -n operator-tutorial-system
+</code></pre>
+<pre><code class="language-bash">NAME                                                   READY   STATUS    RESTARTS   AGE
+operator-tutorial-controller-manager-db8c46dbf-58kdn   2/2     Running   0          2m
+</code></pre>
+<p>and to make sure that our webhook configurations are also deployed. we can run the following</p>
+<pre><code class="language-bash">kubectl get mutatingwebhookconfigurations.admissionregistration.k8s.io -n operator-tutorial-system
+</code></pre>
+<pre><code class="language-bash">NAME                                               WEBHOOKS   AGE
+cert-manager-webhook                               1          2m
+operator-tutorial-mutating-webhook-configuration   1          2m
+</code></pre>
+<pre><code class="language-bash">kubectl get mutatingwebhookconfigurations.admissionregistration.k8s.io -n operator-tutorial-system
+</code></pre>
+<pre><code class="language-bash">NAME                                                 WEBHOOKS   AGE
+cert-manager-webhook                                 1          2m
+operator-tutorial-validating-webhook-configuration   1          2m
+</code></pre>
+<p>we see our webhook configurations as well as the ones that belong to cert-manager and are in charge of injecting the <code>caBunlde</code>
+into our webhook services.
+Awesome! everything is deployed. Now let's see if the admission webhook is working as web expect.</p>
+<h2 id="5-test-mutating-webhook"><a class="header" href="#5-test-mutating-webhook">5. Test Mutating Webhook</a></h2>
+<p>Let's first check the (defaulting)/mutating web hook.
+let us make sure the marketing namespace exists.</p>
+<pre><code class="language-bash">kubectl create namespace marketing
+</code></pre>
+<p>and use the following ghost resource <code>config/samples/blog_v1_ghost.yaml</code>.</p>
+<pre><code class="language-yaml">apiVersion: blog.example.com/v1
+kind: Ghost
+metadata:
+  name: ghost-sample
+  namespace: marketing
+spec:
+  imageTag: alpine
+</code></pre>
+<p>as you can see the <code>replicas</code> field is not set, therefore the defaulting webhook should 
+intercept the resource creation and set the replicas to <code>2</code> as we defined above.</p>
+<p>let us make sure that is the case.</p>
+<pre><code class="language-bash">kubectl apply -f config/samples/blog_v1_ghost.yaml
+</code></pre>
+<p>and check the number of replicas on the ghost resouce we see it is set to <code>2</code>.</p>
+<pre><code class="language-bash">kubectl get ghosts.blog.example.com -n marketing ghost-sample -o jsonpath=&quot;{.spec.replicas}&quot; | yq
+2
+</code></pre>
+<p>let us check the number of replicas (pods) of our ghost deployment managed resource, to confirm that in action.</p>
+<pre><code class="language-bash">kubectl get pods -n marketing
+</code></pre>
+<pre><code class="language-bash">NAME                                      READY   STATUS    RESTARTS      AGE
+ghost-deployment-68rl2-85b796bd67-hzs6f   1/1     Running   1 			  2m
+ghost-deployment-68rl2-85b796bd67-pczwx   1/1     Running   0             2m
+</code></pre>
+<p>Yep! </p>
+<h2 id="5-test-valdating-webhook"><a class="header" href="#5-test-valdating-webhook">5. Test Valdating Webhook</a></h2>
+<p>Ok, now let us check if the validation webhook is also working as expected.
+If you remember from the above, we reject custom resources with <code>replicas &gt; 5</code>.
+so let us apply the following resouce with <code>6</code> replicas.</p>
+<pre><code class="language-bash">apiVersion: blog.example.com/v1
+kind: Ghost
+metadata:
+  name: ghost-sample
+  namespace: marketing
+spec:
+  imageTag: alpine
+  replicas: 6
+</code></pre>
+<p><code>config/samples/blog_v1_ghost.yaml</code>.</p>
+<pre><code class="language-bash">kubectl apply -f config/samples/blog_v1_ghost.yaml 
+</code></pre>
+<p>yep! and we get </p>
+<pre><code class="language-bash">Error from server (Forbidden): error when applying patch:
+{&quot;metadata&quot;:{&quot;annotations&quot;:{&quot;kubectl.kubernetes.io/last-applied-configuration&quot;:&quot;{\&quot;apiVersion\&quot;:\&quot;blog.example.com/v1\&quot;,\&quot;kind\&quot;:\&quot;Ghost\&quot;,\&quot;metadata\&quot;:{\&quot;annotations\&quot;:{},\&quot;name\&quot;:\&quot;ghost-sample\&quot;,\&quot;namespace\&quot;:\&quot;marketing\&quot;},\&quot;spec\&quot;:{\&quot;imageTag\&quot;:\&quot;alpine\&quot;,\&quot;replicas\&quot;:6}}\n&quot;}},&quot;spec&quot;:{&quot;replicas&quot;:6}}
+to:
+Resource: &quot;blog.example.com/v1, Resource=ghosts&quot;, GroupVersionKind: &quot;blog.example.com/v1, Kind=Ghost&quot;
+Name: &quot;ghost-sample&quot;, Namespace: &quot;marketing&quot;
+for: &quot;config/samples/blog_v1_ghost.yaml&quot;: error when patching &quot;config/samples/blog_v1_ghost.yaml&quot;: admission webhook &quot;vghost.kb.io&quot; denied the request: ghost replicas cannot be more than 5
+</code></pre>
+<p>our validation webhook has rejected the admission review with our custom error message in the last line.</p>
+<pre><code class="language-bash">ghost replicas cannot be more than 5
+</code></pre>
 <h1 id="serverless"><a class="header" href="#serverless">Serverless</a></h1>
 <h1 id="100days-resources-25"><a class="header" href="#100days-resources-25">100Days Resources</a></h1>
 <ul>
