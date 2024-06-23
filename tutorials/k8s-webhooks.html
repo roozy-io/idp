@@ -218,10 +218,10 @@ Create a figure for admission webhook response (admission review)
 Admission Webhooks can run inside or outside the cluster. If We deploy them inside the cluster, we can leverage cert manager for automatically inject certificate</p>
 </blockquote>
 <blockquote>
-<p>Admission Controllers <a href="https://kubernetes.io/docs/concepts/extend-kubernetes/#key-to-the-figure">Details</a>
-<img src="../assets/extension-points.png" alt="k8s Extension Points" width="100%"></p>
+<p>Dynamic Admission Control <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">Details</a>
+<img src="../assets/k8s-admission-control.png" alt="Dynamic Admission Control" width="100%"></p>
 </blockquote>
-<h2 id="todo-after-deploying-a-webhook-lets-create-an-object-where-the-admission-webhook-validating-and-mutating-is-called-and-inspect-the-logs-of-the-kube-api-server-or-look-at-the-etcd-for-the-admission-review-request-and-respons"><a class="header" href="#todo-after-deploying-a-webhook-lets-create-an-object-where-the-admission-webhook-validating-and-mutating-is-called-and-inspect-the-logs-of-the-kube-api-server-or-look-at-the-etcd-for-the-admission-review-request-and-respons">TODO: after deploying a webhook, let's create an object where the admission webhook (validating and mutating is called) and inspect the logs of the kube-api server or look at the etcd for the admission review request and respons</a></h2>
+<h1 id="redraw-the-image"><a class="header" href="#redraw-the-image">redraw the image</a></h1>
 <h2 id="1-create-a-webhook-for-our-operator"><a class="header" href="#1-create-a-webhook-for-our-operator">1. Create a webhook for our operator</a></h2>
 <p>We need a test cluster. Kind is a good option.</p>
 <pre><code class="language-shell">kind create cluster
@@ -400,7 +400,7 @@ operator-tutorial-validating-webhook-configuration   1          2m
 </code></pre>
 <p>we see our webhook configurations as well as the ones that belong to cert-manager and are in charge of injecting the <code>caBunlde</code>
 into our webhook services.
-Awesome! everything is deployed. Now let's see if the admission webhook is working as web expect.</p>
+Awesome! everything is deployed. Now let's see if the admission webhook is working as we expect.</p>
 <h2 id="5-test-mutating-webhook"><a class="header" href="#5-test-mutating-webhook">5. Test Mutating Webhook</a></h2>
 <p>Let's first check the (defaulting)/mutating web hook.
 let us make sure the marketing namespace exists.</p>
@@ -422,7 +422,8 @@ intercept the resource creation and set the replicas to <code>2</code> as we def
 </code></pre>
 <p>and check the number of replicas on the ghost resouce we see it is set to <code>2</code>.</p>
 <pre><code class="language-bash">kubectl get ghosts.blog.example.com -n marketing ghost-sample -o jsonpath=&quot;{.spec.replicas}&quot; | yq
-2
+</code></pre>
+<pre><code class="language-bash">2
 </code></pre>
 <p>let us check the number of replicas (pods) of our ghost deployment managed resource, to confirm that in action.</p>
 <pre><code class="language-bash">kubectl get pods -n marketing
