@@ -1,4 +1,4 @@
-# Kubernetes Webhooks.
+# Kubernetes Webhooks
 
 ## Links
 
