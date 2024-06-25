@@ -46,7 +46,7 @@ kube-apiserver -h | grep enable-admission-plugins
 
 
 > Dynamic Admission Control [Details](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)
-<img src="../assets/webhook.drawio.png" alt="Dynamic Admission Control" width="100%">
+<img src="../assets/webhook.drawio.svg" alt="Dynamic Admission Control" width="100%">
 
 ## 1. Create a Webhook for Our Operator
 
@@ -322,7 +322,7 @@ ghost-deployment-68rl2-85b796bd67-pczwx   1/1     Running   0             2m
 ```
 Yep! 
 
-## 5. Test Valdating Webhook
+## 6. Test Valdating Webhook
 
 
 Ok, now let us check if the validation webhook is also working as expected.
