@@ -46,9 +46,7 @@ kube-apiserver -h | grep enable-admission-plugins
 
 
 > Dynamic Admission Control [Details](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/)
-<img src="../assets/k8s-admission-control.png" alt="Dynamic Admission Control" width="100%">
-
-# redraw the image
+<img src="../assets/webhook.drawio.png" alt="Dynamic Admission Control" width="100%">
 
 ## 1. Create a Webhook for Our Operator
 
