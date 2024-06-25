@@ -3,7 +3,7 @@
 ## Links
 
 1. [Video by Shahrooz Aghili](https://youtu.be/)
-2. [Killercoda Hands-on Lab](https://killercoda.com/aghilish/scenario/k8s_webhooks)
+2. [Killercoda Hands-on Lab](https://killercoda.com/aghilish/scenario/webhooks)
 
 ## Learning Resources
 
