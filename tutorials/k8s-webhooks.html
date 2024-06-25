@@ -219,7 +219,7 @@ Admission Webhooks can run inside or outside the cluster. If We deploy them insi
 </blockquote>
 <blockquote>
 <p>Dynamic Admission Control <a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/">Details</a>
-<img src="../assets/webhook.drawio.png" alt="Dynamic Admission Control" width="100%"></p>
+<img src="../assets/webhook.drawio.svg" alt="Dynamic Admission Control" width="100%"></p>
 </blockquote>
 <h2 id="1-create-a-webhook-for-our-operator"><a class="header" href="#1-create-a-webhook-for-our-operator">1. Create a Webhook for Our Operator</a></h2>
 <p>We need a test cluster. Kind is a good option.</p>
@@ -432,7 +432,7 @@ ghost-deployment-68rl2-85b796bd67-hzs6f   1/1     Running   1 			  2m
 ghost-deployment-68rl2-85b796bd67-pczwx   1/1     Running   0             2m
 </code></pre>
 <p>Yep! </p>
-<h2 id="5-test-valdating-webhook"><a class="header" href="#5-test-valdating-webhook">5. Test Valdating Webhook</a></h2>
+<h2 id="6-test-valdating-webhook"><a class="header" href="#6-test-valdating-webhook">6. Test Valdating Webhook</a></h2>
 <p>Ok, now let us check if the validation webhook is also working as expected.
 If you remember from the above, we reject custom resources with <code>replicas &gt; 5</code>.
 so let us apply the following resouce with <code>6</code> replicas.</p>
