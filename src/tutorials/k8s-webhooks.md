@@ -55,7 +55,7 @@ We need a test cluster. Kind is a good option.
 kind create cluster
 ```
 
-let's pick up where we left off last time by cloning into our ghost operator tutorial.
+let's pick up where we left off last time by cloning our ghost operator tutorial.
 
 ```bash
 git clone https://github.com/aghilish/operator-tutorial.git
