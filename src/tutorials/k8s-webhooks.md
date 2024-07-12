@@ -2,8 +2,9 @@
 
 ## Links
 
-1. [Video by Shahrooz Aghili](https://youtu.be/)
+1. [Video by Shahrooz Aghili](https://youtu.be/bOalXo21fF4)
 2. [Killercoda Hands-on Lab](https://killercoda.com/aghilish/scenario/webhooks)
+3. [Kubebuilder Tutorial](https://youtu.be/azJsyLjvHsI)
 
 ## Learning Resources
 
